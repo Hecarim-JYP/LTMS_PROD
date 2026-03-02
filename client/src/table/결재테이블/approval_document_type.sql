@@ -1,0 +1,28 @@
+-- 결재 문서 유형 마스터 테이블
+CREATE TABLE `approval_document_type` (
+  `approval_document_type_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'PK',
+  `document_type_code` varchar(20) NOT NULL COMMENT '문서 유형 코드 (Ex. CT_REQ: CT의뢰, CT_TEST: 시험성적서)',
+  `company_id` int(11) NOT NULL DEFAULT 1 COMMENT '회사 pk(외래키)',
+  `module_name` varchar(50) DEFAULT NULL COMMENT '모듈명 (CT, InternalTest, ExternalTest, Preservative 등)',
+  `document_type_name` varchar(100) NOT NULL COMMENT '문서 유형명',
+  `document_category` varchar(20) DEFAULT NULL COMMENT '문서 분류 (REQUEST: 의뢰, TEST: 시험성적서, REPORT: 보고서 등)',
+  `description` text DEFAULT NULL COMMENT '설명',
+  `requires_approval` tinyint(1) DEFAULT 1 COMMENT '결재 필요 여부 (1: 필요, 0: 불필요)',
+  `default_template_id` int(11) DEFAULT NULL COMMENT '기본 결재 양식 pk (외래키)',
+  `icon` varchar(50) DEFAULT NULL COMMENT '아이콘 클래스명 (UI용)',
+  `color` varchar(20) DEFAULT NULL COMMENT '색상 코드 (UI용)',
+  `is_active` tinyint(1) DEFAULT 1 COMMENT '활성 여부 (1: 활성, 0: 비활성)',
+  `sort_order` int(11) DEFAULT 1 COMMENT '정렬 순번',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '생성일',
+  `created_by` int(11) DEFAULT NULL COMMENT '생성자',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일',
+  `updated_by` int(11) DEFAULT NULL COMMENT '수정자',
+  `deleted_at` datetime DEFAULT NULL COMMENT '삭제일',
+  `deleted_by` int(11) DEFAULT NULL COMMENT '삭제자',
+  PRIMARY KEY (`approval_document_type_id`),
+  UNIQUE KEY `idx_unique_type_company` (`company_id`, `document_type_code`) COMMENT '회사-문서유형 유니크 인덱스',
+  KEY `idx_company_active_sort` (`company_id`, `is_active`, `sort_order`) COMMENT '회사, 활성 여부 및 정렬 순번 인덱스',
+  KEY `idx_module_name` (`module_name`) COMMENT '모듈별 조회',
+  KEY `idx_document_category` (`document_category`) COMMENT '문서 분류별 조회',
+  KEY `idx_default_template_id` (`default_template_id`) COMMENT '기본 템플릿 조회'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='결재 문서 유형 마스터 테이블';

@@ -1,0 +1,27 @@
+-- 결재 알림 테이블
+CREATE TABLE `approval_notification` (
+  `approval_notification_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'PK',
+  `company_id` int(11) NOT NULL DEFAULT 1 COMMENT '회사 pk(외래키)',
+  `approval_document_id` int(11) NOT NULL COMMENT '결재 문서 pk(외래키)',
+  `approval_history_id` int(11) DEFAULT NULL COMMENT '결재 이력 pk(외래키) - 어떤 이력으로 발생한 알림인지',
+  `recipient_user_id` int(11) NOT NULL COMMENT '수신자 pk(외래키)',
+  `notification_type` varchar(20) NOT NULL COMMENT '알림 유형 (REQUEST: 결재요청, APPROVED: 승인됨, REJECTED: 반려됨, CANCELED: 취소됨, MENTIONED: 언급됨)',
+  `notification_title` varchar(200) DEFAULT NULL COMMENT '알림 제목',
+  `notification_message` text DEFAULT NULL COMMENT '알림 내용',
+  `priority` varchar(10) DEFAULT 'NORMAL' COMMENT '우선순위 (HIGH: 높음, NORMAL: 보통, LOW: 낮음)',
+  `is_read` tinyint(1) DEFAULT 0 COMMENT '읽음 여부 (1: 읽음, 0: 안읽음)',
+  `read_at` datetime DEFAULT NULL COMMENT '읽은 일시',
+  `is_sent_email` tinyint(1) DEFAULT 0 COMMENT '이메일 발송 여부',
+  `sent_email_at` datetime DEFAULT NULL COMMENT '이메일 발송 일시',
+  `is_sent_push` tinyint(1) DEFAULT 0 COMMENT '푸시 발송 여부',
+  `sent_push_at` datetime DEFAULT NULL COMMENT '푸시 발송 일시',
+  `action_url` varchar(500) DEFAULT NULL COMMENT '액션 URL (클릭시 이동할 페이지)',
+  `expires_at` datetime DEFAULT NULL COMMENT '만료일시 (읽지 않은 알림 자동 삭제용)',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '생성일',
+  `created_by` int(11) DEFAULT NULL COMMENT '생성자',
+  PRIMARY KEY (`approval_notification_id`),
+  KEY `idx_recipient_read` (`recipient_user_id`, `is_read`, `created_at` DESC) COMMENT '수신자의 안읽은 알림 조회',
+  KEY `idx_approval_document` (`approval_document_id`) COMMENT '문서별 알림 조회',
+  KEY `idx_company_active` (`company_id`, `created_at` DESC) COMMENT '회사별 알림 조회',
+  KEY `idx_notification_type` (`notification_type`) COMMENT '알림 유형별 조회'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='결재 알림 테이블';

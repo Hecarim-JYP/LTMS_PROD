@@ -1,0 +1,28 @@
+-- 제형연구소 담당 샘플 관리 테이블
+CREATE TABLE `ct_request_sample` (
+  `ct_request_sample_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'PK',
+  `company_id` int(11) NOT NULL DEFAULT 1 COMMENT '회사 pk(외래키)',
+  `ct_request_id` int(11) DEFAULT NULL COMMENT 'CT 의뢰 pk(외래키)',
+  `sample_lab_no` varchar(100) DEFAULT NULL COMMENT '랩넘버',
+  `ct_test_seq` smallint(6) DEFAULT NULL COMMENT '차수',
+  `bulk_volume` decimal(19,5) DEFAULT NULL COMMENT '벌크량',
+  `bulk_volume_unit_id` int(11) DEFAULT NULL COMMENT '벌크량 용량 단위 pk (외래키)',
+  `viscosity` decimal(19,5) DEFAULT NULL COMMENT '점도',
+  `hardness` decimal(19,5) DEFAULT NULL COMMENT '경도',
+  `specific_gravity` decimal(19,5) DEFAULT NULL COMMENT '비중',
+  `ratio` decimal(19,5) DEFAULT NULL COMMENT '비율',
+  `ratio_type_id` int(11) DEFAULT NULL COMMENT '비율(부피비/무게비) 단위 pk (외래키)',
+  `significant` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`significant`)),
+  `is_active` tinyint(1) DEFAULT 1 COMMENT '활성 여부 (1: 활성, 0: 비활성)',
+  `sort_order` int(11) DEFAULT 1 COMMENT '정렬 순번',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '생성일',
+  `created_by` int(11) DEFAULT NULL COMMENT '생성자',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일',
+  `updated_by` int(11) DEFAULT NULL COMMENT '수정자',
+  `deleted_at` datetime DEFAULT NULL COMMENT '삭제일',
+  `deleted_by` int(11) DEFAULT NULL COMMENT '삭제자',
+  PRIMARY KEY (`ct_request_sample_id`),
+  KEY `idx_ct_request_id` (`ct_request_id`) COMMENT 'CT 의뢰 ID별 조회',
+  KEY `idx_sample_lab_no` (`sample_lab_no`) COMMENT '랩넘버별 조회',
+  KEY `idx_company_active_sort` (`company_id`,`is_active`,`sort_order`) COMMENT '회사, 활성 여부 및 정렬 순번 인덱스'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='제형연구소 담당 샘플 관리 테이블';

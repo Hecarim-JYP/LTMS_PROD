@@ -1,0 +1,456 @@
+.dashboard-section {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 26px;
+    box-shadow: 0 12px 30px rgba(36, 57, 109, 0.12);
+}
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 24px;
+}
+
+.dashboard-cards > .stat-card:nth-child(n+4) {
+    grid-column: auto !important;
+}
+
+.doc-status-page .page-content {
+    display: flex;
+    gap: 32px;
+    align-items: stretch;
+}
+
+/* 서류 상세 등 단일 본문+푸터 구조: 푸터가 하단에 오도록 본문만 column로 */
+.doc-status-page .page-content.doc-status-container {
+    flex-direction: column;
+    flex: 1;
+}
+
+.doc-status-page .page-content.doc-status-container .doc-apply-main {
+    flex: 1 1 auto;
+    width: 100%;
+}
+
+.doc-status-dashboard {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* 서류 현황 status-cards: 프로젝트 현황 stat-card와 동일한 디자인 통일 */
+.doc-status-dashboard .status-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.doc-status-dashboard .status-card {
+    background: #ffffff;
+    border-radius: 6px;
+    padding: 0.6rem;
+    box-shadow: 0 0 12px rgba(229, 233, 242, 1);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    border: none;
+}
+
+.doc-status-dashboard .status-card-link {
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    cursor: pointer;
+}
+
+.doc-status-dashboard .status-card-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(229, 233, 242, 0.9);
+}
+
+.doc-status-dashboard .status-card-link:active {
+    transform: translateY(0);
+}
+
+/* stat-card-header: 프로젝트 현황과 동일 */
+.doc-status-dashboard .status-card .stat-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 0 0.4rem;
+}
+
+.doc-status-dashboard .status-card .stat-card-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #1F2A37;
+    font-weight: 600;
+}
+
+/* 값 영역: stat-card-value 톤 (프로젝트 현황과 동일) */
+.doc-status-dashboard .status-card .status-card-header {
+    background: #DFF2EE;
+    border-radius: 6px;
+    padding: 14px 16px;
+    border: 1px solid #E5E9F2;
+    min-height: 94px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.doc-status-dashboard .status-card .status-count {
+    font-size: 25px;
+    font-weight: 700;
+    color: #1A40C1;
+    border-bottom: 2px solid #1A40C1;
+    padding-bottom: 2px;
+}
+
+.doc-status-dashboard .status-card-description {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 0;
+}
+
+.document-count {
+    font-size: 14px;
+    color: #2f3a5d;
+    text-align: center;
+}
+
+.document-items {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.project-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.project-head,
+.project-item {
+    display: grid;
+    grid-template-columns: 60px 110px 120px 120px 160px 1fr 100px 110px;
+    align-items: center;
+    padding: 12px 18px;
+    border-radius: 12px;
+}
+
+.project-head {
+    background: #f2f4ff;
+    color: #5c6789;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.project-item {
+    border: 1px solid #eef1ff;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(90, 112, 189, 0.12);
+}
+
+.project-item-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.project-item-link:hover {
+    text-decoration: none;
+}
+
+.project-item span {
+    font-size: 14px;
+    color: #2f3a5d;
+}
+
+.project-name {
+    font-weight: 600;
+    color: #1a2a5f;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #1a2a5f;
+}
+
+.section-header .view-all {
+    font-size: 14px;
+    color: #1f5fff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 70px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-pill.waiting {
+    background: #fff4e5;
+    color: #c7782c;
+}
+
+.status-pill.progress {
+    background: #eaf3ff;
+    color: #2466ff;
+}
+
+.status-pill.done {
+    background: #e9f9f1;
+    color: #189d57;
+}
+
+.status-pill.recall {
+    background: #ffecec;
+    color: #d9534f;
+}
+
+.status-pill.etc {
+    background: #f2f2f2;
+    color: #6c757d;
+}
+
+.status-pill.temp-save {
+    background: #fff8e1;
+    color: #f57c00;
+}
+
+.progress-card {
+    background: rgba(241,245,248,0.4);
+    border: 1px solid #eef1ff;
+    box-shadow: 0 12px 30px rgba(36, 57, 109, 0.12);
+    border-radius: 18px;
+    color: #1a2a5f;
+    padding: 24px;
+    display: flex;
+    flex-direction: row;
+    gap: 24px;
+    align-items: center;
+}
+
+.progress-card .card-title {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.progress-card .card-title span:first-child {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.progress-card .card-subtitle {
+    color: #5c6789;
+    font-size: 14px;
+}
+
+.progress-chart-container {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    flex-shrink: 0;
+}
+
+.progress-chart-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+}
+
+.progress-rate {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a2a5f;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.progress-label {
+    font-size: 13px;
+    color: #5c6789;
+    font-weight: 500;
+}
+
+.stat-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.stat-card-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1F2A37;
+}
+
+.stat-card-value {
+    background: #DFF2EE;
+    border-radius: 6px;
+    padding: 14px 16px;
+    border: 1px solid #E5E9F2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 94px;
+}
+
+/* doc-status stat-card-value 배경색 (project stat-card-column과 동일) */
+.stat-card-value.green {
+    background: color-mix(in oklab,#12b76a 8%,transparent);
+}
+.stat-card-value.yellow {
+    background: color-mix(in oklab,#f79009 8%,transparent);
+}
+.stat-card-value.skyblue {
+    background: color-mix(in oklab,#0ba5ec 8%,transparent);
+}
+
+.stat-card-value-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stat-card-value-tit {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1F2A37;
+}
+
+.stat-card-value-text span {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1A40C1;
+    margin-left: 4px;
+    border-bottom: 2px solid #1A40C1;
+    padding-bottom: 2px;
+}
+
+.stat-card-value-text .unit {
+    font-size: 14px;
+    font-weight: 400;
+    color: #7F8A99;
+    margin-left: 4px;
+    border-bottom: none;
+}
+
+.stat-card-box {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    background-color: rgba(241,245,248,0.4);
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.stat-card-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.stat-card-icon-wrapper {
+    width: 3rem;
+    height: 4rem;
+    background-color: #30b49f45;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+}
+
+/* doc-status 상태별 아이콘 배경색 (project stat-card-icon-wrapper와 동일) */
+.stat-card-icon-wrapper.green {
+    border: 1px solid #12b76a;
+    background-color: color-mix(in oklab,#12b76a 100%,transparent);
+}
+.stat-card-icon-wrapper.yellow {
+    border: 1px solid #f79009;
+    background-color: color-mix(in oklab,#f79009 100%,transparent);
+}
+.stat-card-icon-wrapper.skyblue {
+    border: 1px solid #0ba5ec;
+    background-color: color-mix(in oklab,#0ba5ec 100%,transparent);
+}
+
+.stat-card-icon-wrapper .material-icons.stat-card-icon,
+.stat-card-icon-wrapper .material-symbols-outlined.stat-card-icon {
+    width: auto;
+    height: auto;
+    font-size: 1.5rem;
+    color: #ffffff;
+}
+
+.stat-card-icon-wrapper .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.stat-card-value-tit {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1F2A37;
+}
+
+.stat-card-value-text span {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1A40C1;
+    margin-left: 4px;
+    border-bottom: 2px solid #1A40C1;
+    padding-bottom: 2px;
+}
+
+.stat-card-value-text .unit {
+    font-size: 14px;
+    font-weight: 400;
+    color: #7F8A99;
+    margin-left: 4px;
+    border-bottom: none;
+}
+
+
+@media (max-width: 1280px) {
+    .page-content {
+        flex-direction: column;
+    }
+
+    .dashboard-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .doc-status-dashboard .status-cards {
+        grid-template-columns: 1fr;
+    }
+}
