@@ -3402,6 +3402,7 @@ pre {
 
 
 
+
 /* ==================== 방부력 테스트 페이지 ====================
     @ Author : 최연웅(231004)
     @ Created : 2026.01.01
@@ -3512,6 +3513,25 @@ pre {
 
 .preservative-search-grid-line-4 {
     grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+}
+
+/* [조회]필드설정(라벨 + 입력칸) */
+.preservative-search-grid .search-field {
+    display: grid;
+    grid-template-columns: 65px minmax(100px, 1fr);
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+
+.preservative-search-grid .search-double-field {
+    display: grid;
+    grid-template-columns: 20px minmax(160px, 1fr);
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
 }
 
 /* 날짜범위 UI */
@@ -4530,6 +4550,25 @@ pre {
     grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
 }
 
+/* [조회]필드설정(라벨 + 입력칸) */
+.external-search-grid .search-field {
+    display: grid;
+    grid-template-columns: 65px minmax(100px, 1fr);
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+
+.external-search-grid .search-double-field {
+    display: grid;
+    grid-template-columns: 20px minmax(160px, 1fr);
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+
 /* 날짜범위 UI */
 .external-search-grid .dateRange {
     display: grid;
@@ -5051,6 +5090,24 @@ pre {
 
 .external-create-approve-button {
     width: 100%;
+}
+
+.external-list-table tbody tr td {
+    padding: 4px;
+    vertical-align: middle;
+    text-align: center;
+    /* cursor: pointer; */
+    border-style: dotted;
+    border-width: thin;
+    white-space: nowrap;
+}
+
+.external-list-table tr:hover {
+    background: var(--row-hover);
+}
+
+.external-list-table-clicked {
+    background: var(--row-selected);
 }
 
 

@@ -28,7 +28,8 @@ export const getInternalMaxValue = async (conn) => {
   console.log(`\n⚡ 최대 시퀀스 조회 쿼리 진입 성공.`);
 
   const query = `
-    SELECT  MAX(request_id) as max
+    SELECT  MAX(request_id) as maxID
+            ,MAX(request_no) as maxNO
     FROM    ingredient_internal_test;
   `;
 
@@ -37,7 +38,8 @@ export const getInternalMaxValue = async (conn) => {
     console.log(`🙌 최대 시퀀스 조회 결과 : ${rows}`);
 
     return {
-      result : rows[0].max
+      maxNO : rows[0].maxNO,
+      maxID : rows[0].maxID
     }
   } catch (err) {
     throw new Error(`❓ Database Query Failed : ${err.message}`);
@@ -336,10 +338,10 @@ export const getInternalLabSerl = async (conn, labNo) => {
  * @description Service에서 정리 후 받은 데이터를 통해 request 테이블 삽입
  * @param { Promise } Connection
  * @param { object } Data
- * @param { String } RequestSeq
+ * @param { String } docNo
  * @returns {*}
  */
-export const insertInternalRequest = async (conn, data, seq) => {
+export const insertInternalRequest = async (conn, data, docNo) => {
   console.log(`\n⚡ Request 데이터 삽입 쿼리 진입 성공.`);
 
   const query = `
@@ -382,7 +384,7 @@ export const insertInternalRequest = async (conn, data, seq) => {
   VALUES (
       :company_id
       ,:internal_request_id
-      ,:internal_request_no
+      ,${docNo}
       ,:internal_request_date
       ,:internal_request_user
       ,:internal_class
@@ -494,7 +496,7 @@ export const insertInternalItems = async (conn, data) => {
  * @param { Object } sample
  * 
  */
-export const insertInternalFiles = async (conn, id, fd, sample) => {
+export const insertInternalFiles = async (conn, id, fd, sample, now) => {
   console.log(`\n⚡ 파일 데이터 삽입 쿼리 진입 성공.`);
   if(!fd) return;
 
@@ -521,7 +523,8 @@ export const insertInternalFiles = async (conn, id, fd, sample) => {
     ,item.size ?? null                          // File 객체 size
     ,item.destination ?? null                   // File 객체 destination
     ,sample.internal_last_user ?? null          // sample 데이터 last_user
-    ,sample.internal_last_date ?? null          // sample 데이터 last_date
+    ,now
+    // ,sample.internal_last_date ?? null          // sample 데이터 last_date
   ]))
 
   const query = `
@@ -562,18 +565,49 @@ export const insertInternalFiles = async (conn, id, fd, sample) => {
 export const updateInternalRequest = async (conn, data, reqId) => {
   console.log(`\n⚡ 의뢰 정보 업데이트 쿼리 진입 성공.`);
   const query = `
-    DELETE FROM   ingredient_internal_test
-    WHERE         request_id = ${reqId};
+    UPDATE  ingredient_internal_test
+    SET     company_id                  = :company_id
+            ,request_id                 = :internal_request_id
+            ,request_no                 = :internal_request_no
+            ,request_date               = :internal_request_date
+            ,request_user               = :internal_request_user
+            ,class                      = :internal_class
+            ,item_no                    = :internal_item_no
+            ,item_name                  = :internal_item_name
+            ,lab_no                     = :internal_lab_no
+            ,lab_serl                   = :internal_lab_serl
+            ,lot_no                     = :internal_lot_no
+            ,is_duple                   = :internal_is_duple
+            ,remark_duple               = :internal_remark_duple
+            ,remark_reason              = :internal_remark_reason
+            ,remark_sample_info         = :internal_remark_sample_info
+            ,remark                     = :internal_remark
+            ,ph_std                     = :internal_ph_std
+            ,ph1_1                      = :internal_ph1_1
+            ,ph1_2                      = :internal_ph1_2
+            ,ph1_3                      = :internal_ph1_3
+            ,ph2_1                      = :internal_ph2_1
+            ,ph2_2                      = :internal_ph2_2
+            ,ph2_3                      = :internal_ph2_3
+            ,ph3_1                      = :internal_ph3_1
+            ,ph3_2                      = :internal_ph3_2
+            ,ph3_3                      = :internal_ph3_3
+            ,test_start_date            = :internal_test_start_date
+            ,test_end_date              = :internal_test_end_date
+            ,test_status                = :internal_test_status
+            ,test_user                  = :internal_test_user
+            ,remark_test                = :internal_remark_test
+            ,last_user                  = :internal_last_user
+            ,last_date                  = :internal_last_date
+    WHERE   request_id = ${reqId};
   `;
 
   try {
-    const delRows = await conn.query(query);
     
     // ------------------------------
     // 중간 과정에 로그 데이터 삽입 필요
     // ------------------------------
-
-    const newRows = await insertInternalRequest(conn, data, reqId);
+    const newRows = await conn.query(query, data);
 
     return reqId;
 
@@ -610,9 +644,35 @@ export const updateInternalItems = async (conn, data, id) => {
  * @param { Date } now
  * 
  */
-export const updateInternalFiles = async (conn, id, now) => {
+export const updateInternalFiles = async (conn, id, oldData, newData, sample, now) => {
+  console.log(`\n ⚡ 파일 정보 업데이트 쿼리 진입 성공.`);
+  console.log("📌 Old File Data : ", oldData);
+  console.log("📌 New File Data : ", newData);
+  // console.log(`📌 File Data Length : ${data.length}`);
+  const query = `
+    DELETE FROM   ingredient_internal_test_files
+    WHERE         request_id = ${id}
+      AND         file_id NOT IN (${oldData});
+  `;
 
+  try {
+    const delRow = await conn.query(query);
+    if (newData.length > 0) {
+      const insertRow = await insertInternalFiles(conn, id, newData, sample, now);
+      console.log(`📌 insertRow : ${insertRow}`);
+
+      return {
+        query : insertRow.query
+        ,request_id : insertRow.request_id
+      }
+    }
+    return ;
+
+  } catch (err) {
+    throw new Error(`🔴 DB Query Failed: ${err.message}`);
+  }
 }
+
 
 
 

@@ -38,14 +38,40 @@ const today = `${year}-${month}-${day}`;
  */
 export const getInternalNextID = async () => {
   const conn = await getPool().getConnection();
+  const date = new Date();
+  const year = String(date.getFullYear()).substring(2, 4);
 
   try {
-    const result = await internalQuery.getInternalID(conn)
+    const response = await internalQuery.getInternalMaxValue(conn);
+
+    let internalId = response.maxID;
+    let internalNo = response.maxNO;
+    if (!internalNo) { internalNo = Number(String(Number(year)).padEnd(6,0)) };
+
+    let presentYear = String(internalNo).substring(0,2);
+
+    if (!presentYear) { presentYear = year };
+
+    if (year > presentYear) {
+      console.log("Interrupt by condition : ", year);
+      internalNo = Number(String(Number(year)).padEnd(6, 0));
+    }
+
+    let resultID = Number(internalId) + 1;
+    let resultNO = Number(internalNo) + 1;
+
+    return {
+      raw: response,
+      maxID: resultID,
+      maxNO: resultNO
+    };
+
   } catch (err) {
+    throw new Error(`🔴 Service Error : ${err.message}`);
 
+  } finally {
+    if(conn) conn.release();
   }
-
-
 };
 
 /**
@@ -114,6 +140,8 @@ export const getInternalDataListDetail = async (id) => {
       ,"dir" : item.file_dir
     }));
 
+    console.log(`\n--fileArray : ${fileArray}`);
+
     // ■ 최종 데이터 정리
     const dataResult = {
       "company_id" : data.company_id
@@ -174,6 +202,8 @@ export const getInternalDataListDetail = async (id) => {
       ,"dir" : item.dir
     }));
 
+    console.log(`\n--fileResult : ${fileResult}`);
+
     console.log(`dataResult : ${JSON.stringify(dataResult)}`);
 
     return {
@@ -211,9 +241,10 @@ export const createInternalData = async (data) => {
 
   const rmArray = Object.values(rmInfo);
   const rmTemp = rmArray.map(item => ({
-    ing_no : item.ing_no
+    ing_no : item.code
   }));
   console.log(`\n-- rmArray : ${rmArray}`);
+  console.log(`\n-- rmArray.stringify : ${JSON.stringify(rmArray)}`);
   console.log(`\n-- rmTemp : ${JSON.stringify(rmTemp)}`);
   
   const keepFiles = JSON.parse(data.body.keepFiles || "[]");
@@ -246,7 +277,7 @@ export const createInternalData = async (data) => {
   };
   // ■ 성분코드 기입 필수 (무조건)
   console.log(`\n-- Must Value : Ingredient Code`);
-  utils.checkInternalRequiredValue(rmTemp.ing_no, "int_rm_0_code", "성분코드"); 
+  utils.checkInternalRequiredValue(rmTemp[0].ing_no, "int_rm_0_code", "성분코드"); 
 
   const labNo = utils.toStringOrEmpty(sampleInfo.internal_lab_no);
   
@@ -256,21 +287,26 @@ export const createInternalData = async (data) => {
     conn = await getPool().getConnection();
 
     await conn.beginTransaction();
+    
+    
+    let getLabSerl = await internalQuery.getInternalLabSerl(conn, labNo);
 
-    labSerl = await internalQuery.getInternalLabSerl(conn, labNo);
-    labSerl = Number(labSerl.result);
+    labSerl = Number(getLabSerl.result);
 
     // ⭐ DB 기입 진행할 Seq, LabVer 구하기
     if (!mode) {
       console.log(`🛜 Create 모드 진입`);
       console.log(`\n-- labSerl ver.1 : ${labSerl}`);
-      maxValue = await internalQuery.getInternalMaxValue(conn);
+      let getMaxValue = await getInternalNextID();
+      maxValue = getMaxValue.maxNO;
       labSerl += 1;
       console.log(`\n-- labSerl ver.2 : ${labSerl}`);
 
       // await conn.rollback();
     } else {
       console.log(`🛜 Update 모드 진입`);
+      maxValue = sampleInfo.internal_request_no;
+      
 
 
     }
@@ -305,8 +341,8 @@ export const createInternalData = async (data) => {
       ,internal_ph3_1 : sampleInfo.internal_ph3_1 ?? ""
       ,internal_ph3_2 : sampleInfo.internal_ph3_2 ?? ""
       ,internal_ph3_3 : sampleInfo.internal_ph3_3 ?? ""
-      ,internal_test_start_date : sampleInfo.internal_test_start_date ?? null
-      ,internal_test_end_date : sampleInfo.internal_test_end_date ?? null
+      ,internal_test_start_date : utils.toDateOrNull(sampleInfo.internal_test_start_date) ?? null
+      ,internal_test_end_date : utils.toDateOrNull(sampleInfo.internal_test_end_date) ?? null
       ,internal_test_status : sampleInfo.internal_test_status ?? null
       ,internal_test_user : sampleInfo.internal_test_user ?? ""
       // ,internal_is_start : sampleInfo.internal_is_start ?? ""
@@ -463,17 +499,27 @@ export const createInternalData = async (data) => {
       };
 
       // ■ 파일이 신규 추가 되었을 때
-      if(fileData.length > checkFileCount) {
+      if(fileData.length > 0) {
         console.log(`\n--fileData.length : ${fileData.length}`);
+        console.log(`\n--checkFileCount : ${checkFileCount}`);
+        console.log(`\n--fileID.length : ${fileID.length}`);
         // 기존 보유중인 파일 데이터 조회 후 file_id 분류
 
-        const internalFile = await internalQuery.updateInternalFiles(conn, internalID, fileID, now);
+        if (fileID.length > 0) {
+          console.log(`\n--fileID.length : ${fileID.length}`);
+          console.log(`\n 파일 업데이트 진행...`);
+          const internalFile = await internalQuery.updateInternalFiles(conn, internalID, fileID, fileData, sampleInfo, now);
+          console.log(`🆗 내부성분분석 파일 데이터 업데이트 완료`);
+        } else {
+          console.log(`\n 파일 생성 진행...`);
+          const internalFile = await internalQuery.insertInternalFiles(conn, internalID, fileData, sampleInfo, now);
+          console.log(`🆗 내부성분분석 파일 데이터 생성 완료`);
+        }
 
-        console.log(`🆗 내부성분분석 파일 데이터 업데이트 완료`);
       }
       // 추가 업로드 한 파일이 있을 때 추가 시도하는 파일만 Insert 시도
       else if (fileData.length > 0) {
-        const internalFile = await internalQuery.insertInternalFiles(conn, internalID, fileData, sampleInfo);
+        const internalFile = await internalQuery.insertInternalFiles(conn, internalID, fileData, sampleInfo, now);
 
         console.log(`🆗 내부성분분석 파일 데이터 생성 완료`);
       }
