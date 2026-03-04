@@ -266,8 +266,10 @@ export const getPreservativeDataListDetail = async (id) => {
       ,"pre_test_result_interm" : data.result_interm              
       ,"pre_test_result_final" : data.result_final               
       ,"pre_test_remark" : data.remark_test                       
-      ,"pre_is_start": data.is_start                           
-      ,"pre_is_fin": data.is_fin                             
+      ,"pre_status" : data.status
+      ,"pre_stsatus_kr" : data.status_kr
+      // ,"pre_is_start": data.is_start                           
+      // ,"pre_is_fin": data.is_fin                             
 
       // 방부제성분(아이템) 정보
 
@@ -477,7 +479,7 @@ export const createPreservativeData = async (data) => {
       // pre_is_fin
       // ,pre_is_start: isStart
       // ,pre_is_fin: isFin
-      ,pre_test_status: utils.toStringOrEmpty(sampleInfo.pre_test_status)
+      ,pre_status: utils.toStringOrEmpty(sampleInfo.pre_status)
     };
 
     console.log('🛠️ 방부력테스트 의뢰 정보 준비 완료.');

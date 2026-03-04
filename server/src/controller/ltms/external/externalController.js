@@ -26,6 +26,63 @@ router.get('/read', async (req, res) => {
   }
 });
 
+
+/**
+ * ✨ 조회 화면 진입시 전체 데이터 조회
+ * -----------------------------------------------
+ * @description "조회" 화면 최초 진입시 전체 DB 데이터 조회
+ * @return { res }
+ */
+router.get('/request/read', async (req, res) => {
+  try {
+    const data = await externalService.getExternalDataList();
+    res.json({ success: true, ...data });
+
+  } catch (err) {
+    res.status(400).json({ err: err.mesaage, success: false });
+  }
+})
+
+
+/**
+ * ✨ 화면 점프시 상세 데이터 조회
+ * @description 조회 → 등록 화면 점프시 request_id 에 따른 상세 데이터 조회
+ * @return { res }
+ */
+router.get('/request/read/detail', async (req, res) => {
+  try {
+    // console.log(`\n--[controller]request : ${JSON.stringify(req)}`);
+    const data = await externalService.getExternalDataListDetail(req.query.request_id);
+    res.json({ success: true, ...data });
+
+  } catch (err) {
+    res.status(400).json({ err: err.messgae, success: false });
+  }
+})
+
+
+/**
+ * ■ 최초 등록시 DB 데이터 삽입
+ * -----------------------------------------------
+ * @description "등록" 화면 내 저장시 DB 데이터 삽입(파일 첨부 없음)
+ * @param {*}
+ */
+router.post('/request/create', async (req, res) => {
+  try {
+    const data = await externalService.createExternalData(req);
+    res.json({ success: true, ...data });
+
+  } catch (err) {
+    res.status(400).json({ 
+      success: false, 
+      error: err.message, 
+      field: err.field
+    });
+  }
+});
+
+
+
 router.get('/:id', async (req, res) => {
   try {
     const data = await externalService.getExternalDataDetail(req.params.id);

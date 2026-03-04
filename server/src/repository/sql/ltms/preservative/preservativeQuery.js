@@ -166,7 +166,8 @@ export const getPreservativeData = async (conn, filters) => {
             when 0 then '대기중'
             when 1 then '시험중'
             when 2 then '시험완료'
-          end                   as status
+          end                   as status_kr
+          ,status               as status
   FROM    preservative_test;
   `
   try {
@@ -295,7 +296,8 @@ export const getPreservativeDataById = async (conn, id) => {
             when 0 then '대기중'
             when 1 then '시험중'
             when 2 then '시험완료'
-          end                      as status
+          end                      as status_kr
+          ,status                   as status
           ,result_interm            as result_interm               
           ,result_final             as result_final             
           ,remark_test              as remark_test             
@@ -535,7 +537,7 @@ INSERT INTO preservative_test (
       ,:pre_test_date_end               
       ,:pre_test_user 
 
-      ,:pre_test_status
+      ,:pre_status
       ,:pre_test_result_interm          
       ,:pre_test_result_final           
       ,:pre_test_remark   
@@ -825,9 +827,9 @@ export const updatePreservativeRequest = async (conn, data, id) => {
     ,test_expect_date            =    :pre_test_date_expect                                                     
     ,test_end_date               =    :pre_test_date_end                                  
     ,test_user                   =    :pre_test_user                    
+
+    ,status                      =    :pre_status
                                  
-    ,is_start                    =    :pre_is_start             
-    ,is_fin                      =    :pre_is_fin                                 
     ,result_interm               =    :pre_test_result_interm                                                   
     ,result_final                =    :pre_test_result_final                                                    
     ,remark_test                 =    :pre_test_remark                        
