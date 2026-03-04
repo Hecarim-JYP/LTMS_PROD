@@ -106,7 +106,7 @@ export default function AuthSettingMenu() {
                 company_id: companyId,
                 is_setting: 1 // 설정용 메뉴 목록 조회 플래그
             };
-            const response = await axios.get("/api/ltms/auth/menu/list", { params });
+            const response = await axios.get("/api/ltms/auth/menus", { params });
             const menus = response.data.data.result || [];
             setAllMenuList(menus);
         } catch (error) {
@@ -124,7 +124,7 @@ export default function AuthSettingMenu() {
     const fetchAllPermissions = async () => {
         try {
             const params = { company_id: companyId };
-            const response = await axios.get("/api/ltms/auth/permission", { params });
+            const response = await axios.get("/api/ltms/auth/permissions", { params });
             const result = response.data.data.result || [];
             const permissionList = result.filter(perm => perm.permission_type === 'menu')
                                          .map(perm => (

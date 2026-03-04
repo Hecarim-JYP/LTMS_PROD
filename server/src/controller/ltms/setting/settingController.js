@@ -15,7 +15,7 @@ const router = express.Router();
 /**
  * 🔎 단위 셀렉트박스 옵션 목록 조회
  * 
- * 엔드포인트: GET /setting/options/unitoptions
+ * 엔드포인트: GET /setting/options/unit
  * 
  * 동작:
  *   1. DB unit 테이블에서 단위 옵션 목록 조회
@@ -23,7 +23,7 @@ const router = express.Router();
  * 응답 예시:
  *   { "success": true, "result": [...] }
  */
-router.get('/options/unitoptions', async (req, res) => {
+router.get('/options/unit', async (req, res) => {
   try {
     const unitOptions = await settingService.getUnitOptions(req.query);
     res.json({ 
@@ -87,7 +87,7 @@ router.get('/options/labdepartment', async (req, res) => {
 /**
  * ✏️ 제형담당부서 옵션 저장
  * 
- * 엔드포인트: POST /setting/options/labdepartment/save
+ * 엔드포인트: POST /setting/labdepartments/save
  * 
  * 동작:
  *   1. 전달받은 제형담당부서 옵션 데이터를 DB lab_department 테이블에 저장
@@ -130,7 +130,7 @@ router.post('/options/labdepartment/save', async (req, res) => {
  *   1. DB manager_type 테이블에서 매니저 타입 옵션 목록 조회
  * 
  * 응답 예시:
- *   { "success": true, "message": "데이터가 삭제되었습니다" }
+ *   { "success": true, "data": [...] }
  *   { "success": false, "error": "해당 데이터를 찾을 수 없습니다" }
  */
 router.get('/options/manager-type', async (req, res) => {
@@ -275,7 +275,7 @@ router.get('/options/department', async (req, res) => {
  */
 router.get('/user-custom', async (req, res) => {
   try {
-    const result = await settingService.getUserCustomSetting(req.query);
+    const result = await settingService.getUserCustomSettings(req.query);
     res.json({ 
       success: true, 
       data: result
@@ -335,7 +335,7 @@ router.patch('/user-custom', async (req, res) => {
 /**
  * 🔎 CT 결재 문서 유형 조회
  */
-router.get('/approval/documentType', async (req, res) => {
+router.get('/approval/document-type', async (req, res) => {
   try {
     const documentTypes = await settingService.getApprovalDocumentTypes(req.query);
     res.json({
@@ -391,7 +391,7 @@ router.get('/approval/template', async (req, res) => {
 /**
  * 🔎 CT 결재선 템플릿 상세 조회 (결재선 목록 포함)
  */
-router.get('/approval/templateWithLines', async (req, res) => {
+router.get('/approval/template-with-lines', async (req, res) => {
   try {
     const result = await settingService.getApprovalTemplateWithLines(req.query);
     res.json({
@@ -475,13 +475,13 @@ router.post('/approval/template/lines', async (req, res) => {
 /**
  * ⭐ 결재 템플릿 기본값 설정
  * 
- * 엔드포인트: POST /approval/template/setDefault
+ * 엔드포인트: POST /approval/template/set-default
  * 
  * 동작:
  *   1. 같은 문서 유형의 다른 템플릿들의 is_default를 0으로 변경
  *   2. 현재 템플릿의 is_default를 1로 변경
  */
-router.post('/approval/template/setDefault', async (req, res) => {
+router.post('/approval/template/set-default', async (req, res) => {
   try {
     const result = await settingService.setDefaultApprovalTemplate(req.body);
     res.json({

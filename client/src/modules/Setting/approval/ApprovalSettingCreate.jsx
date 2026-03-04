@@ -102,7 +102,7 @@ export default function ApprovalSettingCreate() {
                 is_setting: 1
             };
             
-            const response = await axios.get("/api/ltms/setting/approval/documentType", { params });
+            const response = await axios.get("/api/ltms/setting/approval/document-type", { params });
             const documentTypes = response.data.data.result || [];
             setDocumentTypes(documentTypes);
         } catch (err) {
@@ -138,7 +138,7 @@ export default function ApprovalSettingCreate() {
                 approval_template_id: templateId
             };
             
-            const response = await axios.get("/api/ltms/setting/approval/templateWithLines", { params });
+            const response = await axios.get("/api/ltms/setting/approval/template-with-lines", { params });
             const result = response.data.data.result;
             
             // 데이터 구조: { template: {...}, lines: [...] }
@@ -339,7 +339,7 @@ export default function ApprovalSettingCreate() {
                         user_id: user.user_id
                     };
                     
-                    const response = await axios.post("/api/ltms/setting/approval/template/setDefault", params);
+                    const response = await axios.post("/api/ltms/setting/approval/template/set-default", params);
 
                     // 상태 업데이트
                     if (response.data.success) {

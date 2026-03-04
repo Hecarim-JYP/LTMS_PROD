@@ -1101,7 +1101,7 @@ export default function CT_Request_Create() {
     const params = Utils.cleanParams(query);
     
     try {
-      const res = await axios.get("/api/ltms/ct/request/read", { params });
+      const res = await axios.get("/api/ltms/ct/requests", { params });
       const resultData = res.data.data.result;
       setCtList(resultData);
     } catch (err) {
@@ -1437,7 +1437,7 @@ export default function CT_Request_Create() {
 
       // 캐시된 데이터가 없으면 API 호출
       const params = { company_id: companyId };
-      const response = await axios.get("/api/ltms/setting/options/unitoptions", { params });
+      const response = await axios.get("/api/ltms/setting/options/unit", { params });
       const unitOptions = response.data.data.result || [];
 
       const bulkUnitOpt = unitOptions.filter(unit => unit.unit_type === "MEASURE"); // 벌크 단위

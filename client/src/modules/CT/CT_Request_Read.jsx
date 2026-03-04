@@ -836,7 +836,7 @@ export default function CT_Request_Read() {
 
     try{
       const params = Utils.cleanParams(searchForm);
-      const res = await axios.get("/api/ltms/ct/request/read", { params });
+      const res = await axios.get("/api/ltms/ct/requests", { params });
       const resultData = res.data.data.result;
       setResult(resultData);
     } catch (err) {
@@ -990,7 +990,7 @@ export default function CT_Request_Read() {
       };
       
       // 응답 객체
-      const res = await axios.get("/api/ltms/ct/request/read", { params });
+      const res = await axios.get("/api/ltms/ct/requests", { params });
       const resultData = res.data.data.result;
 
       setResult(resultData);

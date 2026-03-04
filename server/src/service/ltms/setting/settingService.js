@@ -33,7 +33,7 @@ export const getManagerTypeOptions = async (params) => {
   try {
     conn = await getPool().getConnection();
 
-    const result = await settingQuery.selectManagerTypeOptions(conn, queryParams);
+    const result = await settingQuery.findManagerTypeOptions(conn, queryParams);
 
     const managerOptions = result.map(opt => ({
       idx: parseInt(opt.idx, 10), // 10진수 정수로 변환
@@ -79,7 +79,7 @@ export const getJudgmentOptions = async (params) => {
   try {
     conn = await getPool().getConnection();
 
-    const result = await settingQuery.selectJudgmentOptions(conn, queryParams);
+    const result = await settingQuery.findJudgmentOptions(conn, queryParams);
 
     const judgmentOptions = result.map(opt => ({
       idx: parseInt(opt.idx, 10), // 10진수 정수로 변환
@@ -124,7 +124,7 @@ export const getUnitOptions = async (params) => {
   try {
     conn = await getPool().getConnection();
 
-    const result = await settingQuery.selectUnitOptions(conn, queryParams);
+    const result = await settingQuery.findUnitOptions(conn, queryParams);
 
     const unitOptions = result.map(opt => ({
       idx: parseInt(opt.idx, 10), // 10진수 정수로 변환
@@ -171,7 +171,7 @@ export const getLabsDepartmentOptions = async (params) => {
   try {
     conn = await getPool().getConnection();
 
-    const result = await settingQuery.selectLabsDepartmentOptions(conn, queryParams);
+    const result = await settingQuery.findLabsDepartmentOptions(conn, queryParams);
     
     const deptOptions = result.map(opt => ({
       idx: parseInt(opt.idx, 10), // 10진수 정수로 변환
@@ -320,7 +320,7 @@ export const getUserGrades = async (params) => {
   try {
     conn = await getPool().getConnection();
 
-    const result = await settingQuery.selectUserGradeList(conn, queryParams);
+    const result = await settingQuery.findUserGrades(conn, queryParams);
 
     const gradeList = result.map(grade => ({
       idx: parseInt(grade.idx, 10), // 10진수 정수로 변환
@@ -365,7 +365,7 @@ export const getDepartmentOptions = async (params) => {
   try {
     conn = await getPool().getConnection();
 
-    const result = await settingQuery.selectDepartmentList(conn, queryParams);
+    const result = await settingQuery.findDepartmentOptions(conn, queryParams);
 
     const deptList = result.map(dept => ({
       idx: parseInt(dept.idx, 10), // 10진수 정수로 변환
@@ -399,12 +399,12 @@ export const getDepartmentOptions = async (params) => {
 
 /* ============================== 설정 ============================== */
 /**
- * getUserCustomSetting : 사용자별 커스텀 설정 조회
+ * getUserCustomSettings : 사용자별 커스텀 설정 조회
  * --------------------------------------------
  * @param {*} params : 조회 파라미터 (user_id)
  * @returns 
  */ 
-export const getUserCustomSetting = async (params) => {
+export const getUserCustomSettings = async (params) => {
 
   // 필수 파라미터 검증
   utils.checkRequiredParams(params, ['user_id', 'company_id']);
@@ -420,7 +420,7 @@ export const getUserCustomSetting = async (params) => {
       is_setting: utils.toNumberOrNull(params.is_setting)
     };
 
-    const settings = await authQuery.selectUserCustomSettings(conn, queryParams);
+    const settings = await authQuery.findUserCustomSettings(conn, queryParams);
 
     if (settings === null) {
       return null; // 사용자 설정이 없는 경우 null 반환
@@ -536,7 +536,7 @@ export const getApprovalDocumentTypes = async (params) => {
   try {
     conn = await getPool().getConnection();
 
-    const result = await settingQuery.selectApprovalDocumentTypes(conn, queryParams);
+    const result = await settingQuery.findApprovalDocumentTypes(conn, queryParams);
 
     const documentTypes = result.map(docType => ({
       idx: parseInt(docType.idx, 10), // 10진수 정수로 변환
@@ -585,7 +585,7 @@ export const getApprovalTemplates = async (params) => {
 
   try {
     conn = await getPool().getConnection();
-    const result = await settingQuery.selectApprovalTemplates(conn, queryParams);
+    const result = await settingQuery.findApprovalTemplates(conn, queryParams);
     
     // 쿼리 결과를 그대로 반환 (이미 템플릿별로 1행씩, line_count 포함)
     const templates = result.map(row => ({
@@ -636,7 +636,7 @@ export const getApprovalTemplateWithLines = async (params) => {
 
   try {
     conn = await getPool().getConnection();
-    const result = await settingQuery.selectApprovalTemplateWithLines(conn, queryParams);
+    const result = await settingQuery.findApprovalTemplateWithLines(conn, queryParams);
 
     // 템플릿이 존재하지 않는 경우
     if (!result.template) {

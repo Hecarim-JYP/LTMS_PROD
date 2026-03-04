@@ -60,7 +60,7 @@ export default function ApprovalSettingRead() {
                 is_setting: 1
             };
             
-            const response = await axios.get("/api/ltms/setting/approval/documentType", { params });
+            const response = await axios.get("/api/ltms/setting/approval/document-type", { params });
             const documentTypesResult = response.data.data.result || [];
             
             // 기존 "전체" 항목 + API 결과 병합

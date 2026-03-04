@@ -203,3 +203,34 @@ export const getItemDtl = async (itemseq) => {
         res.status(500).json({ message: "🤷‍♂️ API 서버와 통신중 오류가 발생했습니다.", detail: err.message });
     }
 }
+
+
+/**
+ * authenticateUser : 사용자 인증 및 로그인 정보 조회
+ * --------------------------------------------
+ * @param {*} params : 조회 파라미터 { loginId, password, company_id }
+ * @returns {Object} : 인증 결과 객체 { raw, data, type }
+ */
+export const authenticateUser = async (params) => {
+
+    try {
+        const queryParams = {
+            loginId: params.user_name,
+            companyId: params.company_id
+        }
+
+        console.log("🤝 You have entered authenticateUser Service");
+
+        const response = await erpClient.post('/authenticate-user', queryParams);
+        const responseData = response.data.data;
+        const authenricatedUserInfo = responseData.result;
+
+        return {
+            result: authenricatedUserInfo,
+            type: responseData.type
+        }
+    } catch (err) {
+        console.error("⚡ Something Wrong in [authenticateUser] : ", err.message);
+        throw err;
+    }
+};

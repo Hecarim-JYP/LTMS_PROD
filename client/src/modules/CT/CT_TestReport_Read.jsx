@@ -432,7 +432,7 @@ export default function CT_TestReport_Read() {
     try {
       const params = Utils.cleanParams(searchForm);
 
-      const response = await axios.get("/api/ltms/ct/test-report/read", { params });
+      const response = await axios.get("/api/ltms/ct/test-reports", { params });
       const reportList = response.data.data.result || [];
       console.log(reportList);
       setReports(reportList);
@@ -586,7 +586,7 @@ export default function CT_TestReport_Read() {
       };
       
       // 응답 객체
-      const res = await axios.get("/api/ltms/ct/test-report/read", { params });
+      const res = await axios.get("/api/ltms/ct/test-reports", { params });
       const resultData = res.data.data.result || [];
       setReports(resultData);
 

@@ -16,7 +16,7 @@ const router = express.Router();
 /**
  * 🔍 CT 데이터 목록 조회
  * 
- * 엔드포인트: GET /ct/read
+ * 엔드포인트: GET /ct/requests
  * 쿼리 파라미터:
  *   - reqNo: 요청 번호 (선택)
  *   - labNo: 랩 번호 (선택)
@@ -30,9 +30,9 @@ const router = express.Router();
  * 응답 예시:
  *   { "success": true, "data": [...], "count": 5 }
  */
-router.get('/request/read', async (req, res) => {
+router.get('/requests', async (req, res) => {
   try {
-    const result = await ctService.getCtDataList(req.query);
+    const result = await ctService.getCtRequests(req.query);
     res.json({ 
       success: true, 
       data: result 
@@ -71,7 +71,7 @@ router.get('/request/read', async (req, res) => {
  */
 router.get('/request/detail', async (req, res) => {
   try {
-    const result = await ctService.getCtDataDetail(req.query);
+    const result = await ctService.getCtRequestById(req.query);
     res.json({ 
       success: true, 
       data: result 
@@ -96,7 +96,7 @@ router.get('/request/detail', async (req, res) => {
 /**
  * 🔍 CT 최근 번호 조회
  * 
- * 엔드포인트: GET /ct/request/getrecentctno
+ * 엔드포인트: GET /ct/request/recent-ct-no
  * 
  * 동작:
  *   1. DB에서 가장 최근 CT번호에 1을 더해 최근 CT 번호 조회
@@ -155,7 +155,7 @@ router.get('/request/recent-ct-no', async (req, res) => {
  */
 router.post('/request/create', async (req, res) => {
   try {
-    const result = await ctService.createCtData(req.body);
+    const result = await ctService.createCtRequest(req.body);
     res.status(201).json({ 
       success: true,
       message: "데이터가 생성되었습니다",
@@ -163,7 +163,7 @@ router.post('/request/create', async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ CT 데이터 생성 실패:", err.message);
+    console.error("❌ CT 의뢰 생성 실패:", err.message);
     res.status(500).json({ 
       success: false, 
       error: {
@@ -203,7 +203,7 @@ router.post('/request/create', async (req, res) => {
  */
 router.post('/request/update', async (req, res) => {
   try {
-    const result = await ctService.updateCtData(req.body);
+    const result = await ctService.updateCtRequest(req.body);
     res.json({ 
       success: true, 
       message: "데이터가 수정되었습니다", 
@@ -211,7 +211,7 @@ router.post('/request/update', async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ CT 데이터 생성 실패:", err.message);
+    console.error("❌ CT 의뢰 수정 실패:", err.message);
     res.status(500).json({ 
       success: false, 
       error: {
@@ -230,9 +230,9 @@ router.post('/request/update', async (req, res) => {
 /**
  * 🔍 CT 시험 성적서 목록 조회
  */
-router.get('/test-report/read', async (req, res) => {
+router.get('/test-reports', async (req, res) => {
   try {
-    const result = await ctService.getCtTestReportList(req.query);
+    const result = await ctService.getCtTestReports(req.query);
     res.json({ 
       success: true, 
       data: result 
@@ -260,7 +260,7 @@ router.get('/test-report/read', async (req, res) => {
  */
 router.get('/test-report/detail', async (req, res) => {
   try {
-    const result = await ctService.getCtTestReportDetail(req.query);
+    const result = await ctService.getCtTestReportById(req.query);
     res.json({ 
       success: true, 
       data: result 
@@ -346,7 +346,7 @@ router.post('/test-report/update', upload.any(), async (req, res) => {
 /**
  * 이전 성적서 목록 조회
  * 
- * 엔드포인트: GET /ct/test-report/history
+ * 엔드포인트: GET /ct/test-report/historys
  * 쿼리 파라미터:
  *   - company_id: 회사 ID (필수)
  *   - search_type: 조회 기준 (REQ: 의뢰일, REC: 접수일)
@@ -355,9 +355,9 @@ router.post('/test-report/update', upload.any(), async (req, res) => {
  *   - ct_no: CT 번호 (선택)
  *   - search_content: 검색어 (선택)
  */
-router.get('/test-report/history', async (req, res) => {
+router.get('/test-report/historys', async (req, res) => {
   try {
-    const result = await ctService.getTestReportHistory(req.query);
+    const result = await ctService.getTestReportHistorys(req.query);
     res.json({ 
       success: true, 
       data: result 
@@ -415,7 +415,7 @@ router.get('/test-report/test-items', async (req, res) => {
 /**
  * 시험 종합 의견 이력 조회
  * 
- * 엔드포인트: GET /ct/test-report/remark-history
+ * 엔드포인트: GET /ct/test-report/remark-historys
  * 쿼리 파라미터:
  *   - company_id: 회사 ID (필수)
  *   - search_type: 조회 기준 (REQ: 의뢰일, REC: 접수일)
@@ -424,9 +424,9 @@ router.get('/test-report/test-items', async (req, res) => {
  *   - material_type: 자재유형 (선택)
  *   - search_content: 검색어 (선택)
  */
-router.get('/test-report/remark-history', async (req, res) => {
+router.get('/test-report/remark-historys', async (req, res) => {
   try {
-    const result = await ctService.getRemarkHistory(req.query);
+    const result = await ctService.getRemarkHistorys(req.query);
     res.json({ 
       success: true, 
       data: result 
@@ -453,9 +453,9 @@ router.get('/test-report/remark-history', async (req, res) => {
 /**
  * 🔍 CT 결재 데이터 목록 조회
  */
-router.get('/approval/read', async (req, res) => {
+router.get('/approvals', async (req, res) => {
   try {
-    const result = await ctService.getCtApprovalList(req.query);
+    const result = await ctService.getCtApprovals(req.query);
     res.json({ 
       success: true, 
       data: result 
@@ -483,7 +483,7 @@ router.get('/approval/read', async (req, res) => {
  */
 router.get('/approval/detail', async (req, res) => {
   try {
-    const result = await ctService.getCtApprovalDetail(req.query);
+    const result = await ctService.getCtApprovalById(req.query);
     res.json({ 
       success: true, 
       data: result 
@@ -507,16 +507,48 @@ router.get('/approval/detail', async (req, res) => {
 
 /* ============================== 시험 기준 ============================== */
 /**
+ * 시험 기준 결과 유형 옵션 조회
+ * 
+ * 엔드포인트: GET /ct/test-standards/result-type-options
+ * 쿼리 파라미터:
+ *   - company_id: 회사 ID (필수)
+ */
+router.get('/result-type-options', async (req, res) => {
+  try {
+    const result = await ctService.getResultTypeOptions(req.query);
+    res.json({ 
+      success: true, 
+      data: result 
+    });
+    
+  } catch (err) {
+    console.error("❌ 시험 기준 결과 유형 옵션 조회 실패:", err.message);
+    res.status(500).json({ 
+      success: false, 
+      error: {
+        message: err.message,
+        code: err.code,
+        errno: err.errno,
+        sqlState: err.sqlState,
+        sql: err.sql
+      },
+      message: err.message,
+    });
+  }
+});
+
+
+/**
  * 시험 기준 목록 조회 (전체)
  * 
- * 엔드포인트: GET /ct/test-standard/list
+ * 엔드포인트: GET /ct/test-standards
  * 쿼리 파라미터:
  *   - company_id: 회사 ID (필수)
  *   - search_keyword: 검색어 (선택)
  */
-router.get('/test-standard/list', async (req, res) => {
+router.get('/test-standards', async (req, res) => {
   try {
-    const result = await ctService.getTestStandardList(req.query);
+    const result = await ctService.getTestStandards(req.query);
     res.json({ 
       success: true, 
       data: result 

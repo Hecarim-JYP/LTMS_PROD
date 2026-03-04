@@ -72,7 +72,7 @@ export default function AuthSettingRole() {
         
         try {
             const params = { company_id: companyId, is_setting: 1 };
-            const response = await axios.get("/api/ltms/auth/permission", { params });
+            const response = await axios.get("/api/ltms/auth/permissions", { params });
             const permissions = response.data.data.result || [];
             setPermissionList(permissions);
         } catch (error) {

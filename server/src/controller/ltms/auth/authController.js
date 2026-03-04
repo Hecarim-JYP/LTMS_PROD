@@ -56,9 +56,9 @@ router.post('/logout', async (req, res) => {
  * 🔎 사이드 바 메뉴리스트 조회
  *
  */
-router.get('/menu/list', async (req, res) => {
+router.get('/menus', async (req, res) => {
   try {
-    const roles = await authService.getMenuList(req.query);
+    const roles = await authService.getMenus(req.query);
     res.json({
       success: true,
       data: roles
@@ -320,9 +320,9 @@ router.patch('/user/save', async (req, res) => {
  *   { "success": true, "data": { ... } }
  *   { "success": false, "error": "해당 데이터를 찾을 수 없습니다" }
  */
-router.get('/role/list', async (req, res) => {
+router.get('/roles', async (req, res) => {
   try {
-    const result = await authService.getRoleList(req.query);
+    const result = await authService.getRoles(req.query);
     res.json({ 
       success: true, 
       data: result
@@ -348,7 +348,7 @@ router.get('/role/list', async (req, res) => {
 /**
  * 🔎 역할별 권한 조회
  */
-router.get('/role/permission', async (req, res) => {
+router.get('/permissions/role', async (req, res) => {
   try {
     const result = await authService.getPermissionByRoleId(req.query);
     res.json({ 
@@ -461,9 +461,9 @@ router.post('/role/assign-permissions', async(req, res) => {
 /**
  * 🔎 권한 목록 조회
  */
-router.get('/permission', async(req, res) => {
+router.get('/permissions', async(req, res) => {
   try {
-    const result = await authService.getPermissionList(req.query);
+    const result = await authService.getPermissions(req.query);
     res.json({ 
       success: true,
       data: result

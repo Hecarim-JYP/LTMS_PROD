@@ -1,0 +1,28 @@
+-- 결과입력 방식 옵션 관리 테이블
+CREATE TABLE `result_type_option` (
+  `result_type_option_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'PK',
+  `company_id` int(11) NOT NULL DEFAULT 1 COMMENT '회사 pk(외래키)',
+  `unit_id` int(11) DEFAULT NULL COMMENT '단위 pk(외래키)',
+  `result_type_code` varchar(30) NOT NULL COMMENT '결과입력 방식 코드',
+  `result_type_name` varchar(100) NOT NULL COMMENT '결과입력 방식명',
+  `result_type_description` varchar(255) DEFAULT NULL COMMENT '방식 설명',
+  `requires_limits` tinyint(1) DEFAULT 0 COMMENT '상하한 규격 필요 여부 (1: 필요, 0: 불필요)',
+  `requires_target` tinyint(1) DEFAULT 0 COMMENT '목표값 필요 여부 (1: 필요, 0: 불필요)',
+  `requires_tolerance` tinyint(1) DEFAULT 0 COMMENT '허용오차 필요 여부 (1: 필요, 0: 불필요)',
+  `input_type` varchar(20) DEFAULT NULL COMMENT 'UI 입력 타입 (select/number/text/textarea/image)',
+  `is_active` tinyint(1) DEFAULT 1 COMMENT '활성 여부 (1: 활성, 0: 비활성)',
+  `sort_order` int(11) DEFAULT 1 COMMENT '정렬 순번',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '생성일',
+  `created_by` int(11) DEFAULT NULL COMMENT '생성자',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일',
+  `updated_by` int(11) DEFAULT NULL COMMENT '수정자',
+  `deleted_at` datetime DEFAULT NULL COMMENT '삭제일',
+  `deleted_by` int(11) DEFAULT NULL COMMENT '삭제자',
+  PRIMARY KEY (`result_type_option_id`),
+  UNIQUE KEY `uk_company_result_type_code` (`company_id`, `result_type_code`),
+  UNIQUE KEY `uk_company_result_type_name` (`company_id`, `result_type_name`),
+  KEY `idx_company_active_sort` (`company_id`, `is_active`, `sort_order`) COMMENT '회사, 활성 여부 및 정렬 순번 인덱스',
+  KEY `idx_result_type_code` (`result_type_code`) COMMENT '결과입력 방식 코드 인덱스',
+  KEY `idx_result_type_option_id` (`result_type_option_id`) COMMENT '결과입력방식 pk 인덱스',
+  KEY `idx_unit_id` (`unit_id`) COMMENT '단위 pk 인덱스'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='결과입력 방식 옵션 관리 테이블';

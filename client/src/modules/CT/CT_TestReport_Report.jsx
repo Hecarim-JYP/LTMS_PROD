@@ -705,7 +705,7 @@ export default function CT_TestReport_Report() {
     params.company_id = companyId;
     
     try {
-      const response = await axios.get('/api/ltms/ct/test-report/history', { params });
+      const response = await axios.get('/api/ltms/ct/test-report/historys', { params });
       
       if (response.data.success) {
         const historyData = response.data.data?.result || [];
@@ -1242,7 +1242,11 @@ export default function CT_TestReport_Report() {
       // 이미지를 base64로 변환
       const processedImages = await Promise.all(
         images.map(async (img) => {
-          const base64 = await blobUrlToBase64(img.file || img.preview);
+          // 서버에서 가져온 이미지인 경우 전체 URL 사용
+          const imageSource = img.file_url 
+            ? `${API_BASE_URL}/api${img.file_url}` 
+            : (img.file || img.preview);
+          const base64 = await blobUrlToBase64(imageSource);
           return {
             preview: base64,
             id: img.ct_test_report_attachment_id
@@ -1255,9 +1259,11 @@ export default function CT_TestReport_Report() {
         reportData.testItems.map(async (item) => {
           let processedImage = null;
           if (item.attachedImage) {
-            const base64 = await blobUrlToBase64(item.attachedImage);
+            // attachedImage가 객체이고 preview 속성이 있는 경우
+            const imageSource = item.attachedImage.preview || item.attachedImage;
+            const base64 = await blobUrlToBase64(imageSource);
             processedImage = {
-              name: item.attachedImage.name,
+              name: item.attachedImage.name || 'image',
               preview: base64
             };
           }
@@ -1273,7 +1279,11 @@ export default function CT_TestReport_Report() {
         reportData.cautions.volume.sections.map(async (section) => {
           const processedSectionImages = await Promise.all(
             section.images.map(async (img) => {
-              const base64 = await blobUrlToBase64(img.file || img.preview);
+              // 서버에서 가져온 이미지인 경우 전체 URL 사용
+              const imageSource = img.file_url 
+                ? `${API_BASE_URL}/api${img.file_url}` 
+                : (img.file || img.preview);
+              const base64 = await blobUrlToBase64(imageSource);
               return {
                 preview: base64,
                 id: img.ct_test_report_attachment_id
@@ -1292,7 +1302,11 @@ export default function CT_TestReport_Report() {
         reportData.cautions.packaging.sections.map(async (section) => {
           const processedSectionImages = await Promise.all(
             section.images.map(async (img) => {
-              const base64 = await blobUrlToBase64(img.file || img.preview);
+              // 서버에서 가져온 이미지인 경우 전체 URL 사용
+              const imageSource = img.file_url 
+                ? `${API_BASE_URL}/api${img.file_url}` 
+                : (img.file || img.preview);
+              const base64 = await blobUrlToBase64(imageSource);
               return {
                 preview: base64,
                 id: img.ct_test_report_attachment_id
@@ -1311,7 +1325,11 @@ export default function CT_TestReport_Report() {
         reportData.cautions.compatibility.sections.map(async (section) => {
           const processedSectionImages = await Promise.all(
             section.images.map(async (img) => {
-              const base64 = await blobUrlToBase64(img.file || img.preview);
+              // 서버에서 가져온 이미지인 경우 전체 URL 사용
+              const imageSource = img.file_url 
+                ? `${API_BASE_URL}/api${img.file_url}` 
+                : (img.file || img.preview);
+              const base64 = await blobUrlToBase64(imageSource);
               return {
                 preview: base64,
                 id: img.ct_test_report_attachment_id
@@ -1467,7 +1485,7 @@ export default function CT_TestReport_Report() {
         company_id: companyId
       };
 
-      const response = await axios.get('/api/ltms/ct/test-standard/list', { params });
+      const response = await axios.get('/api/ltms/ct/test-standards', { params });
       const testStandards = response.data.data.result || [];
 
       if (response.data.success) {
@@ -1724,6 +1742,15 @@ export default function CT_TestReport_Report() {
    */
   const handleTestItemImageRemove = (itemId) => {
     if (confirm("첨부된 이미지를 삭제하시겠습니까?")) {
+      // 삭제할 이미지의 첨부파일 ID 찾기
+      const targetItem = reportData.testItems.find(item => item.ct_test_item_id === itemId);
+      if (targetItem?.attachedImage?.ct_test_report_attachment_id) {
+        // 서버에 저장된 이미지인 경우 삭제 목록에 추가
+        setDeletedAttachmentIds(prev => [...prev, { 
+          ct_test_report_attachment_id: targetItem.attachedImage.ct_test_report_attachment_id 
+        }]);
+      }
+      
       // reportData.testItems에서 해당 ID의 행의 attachedImage를 null로 설정
       setReportData(prev => ({
         ...prev,
@@ -1731,7 +1758,6 @@ export default function CT_TestReport_Report() {
           item.ct_test_item_id === itemId ? { ...item, attachedImage: null } : item
         )
       }));
-      setDeletedAttachmentIds(prev => [...prev, { ct_test_report_attachment_id: itemId }]); // 삭제할 첨부파일 ID 저장 (서버 전송용)
     }
   };
 
@@ -1754,7 +1780,8 @@ export default function CT_TestReport_Report() {
   const handleAddVolumeSection = () => {
     setReportData(prev => {
       const newSection = {
-        ct_test_caution_id: volumeSectionIdCounter.current++,  // 임시 ID
+        tempId: `volume_${volumeSectionIdCounter.current++}`,  // 임시 식별용 ID
+        ct_test_caution_id: undefined,  // 새 섹션이므로 undefined (서버에서 INSERT 처리)
         ct_test_report_id: reportId || "",
         caution_type: "volume",
         section_title: t.volume,
@@ -1784,7 +1811,9 @@ export default function CT_TestReport_Report() {
     if(confirm("이 섹션을 삭제하시겠습니까?")) {
       setReportData(prev => {
         // 이미지 메모리 정리
-        const section = prev.cautions.volume.sections.find(s => s.ct_test_caution_id === sectionId);
+        const section = prev.cautions.volume.sections.find(s => 
+          (s.ct_test_caution_id && s.ct_test_caution_id === sectionId) || s.tempId === sectionId
+        );
         if(section) {
           section.images.forEach(img => URL.revokeObjectURL(img.file_url || img.preview));
         }
@@ -1794,7 +1823,11 @@ export default function CT_TestReport_Report() {
             ...prev.cautions,
             volume: {
               ...prev.cautions.volume,
-              sections: prev.cautions.volume.sections.filter(s => s.ct_test_caution_id !== sectionId)
+              sections: prev.cautions.volume.sections.filter(s => 
+                (s.ct_test_caution_id && s.ct_test_caution_id !== sectionId) || 
+                (s.tempId && s.tempId !== sectionId) ||
+                (!s.ct_test_caution_id && !s.tempId)
+              )
             }
           }
         };
@@ -1813,7 +1846,9 @@ export default function CT_TestReport_Report() {
         volume: {
           ...prev.cautions.volume,
           sections: prev.cautions.volume.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, section_title } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId) 
+              ? { ...section, section_title } 
+              : section
           )
         }
       }
@@ -1831,7 +1866,9 @@ export default function CT_TestReport_Report() {
         volume: {
           ...prev.cautions.volume,
           sections: prev.cautions.volume.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, section_content } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, section_content } 
+              : section
           )
         }
       }
@@ -1850,7 +1887,7 @@ export default function CT_TestReport_Report() {
           volume: {
             ...prev.cautions.volume,
             sections: prev.cautions.volume.sections.map(section =>
-              section.ct_test_caution_id === sectionId
+              ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
                 ? { ...section, images: [...section.images, ...newImages] }
                 : section
             )
@@ -1871,7 +1908,7 @@ export default function CT_TestReport_Report() {
         volume: {
           ...prev.cautions.volume,
           sections: prev.cautions.volume.sections.map(section =>
-            section.ct_test_caution_id === sectionId
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
               ? {
                   ...section,
                   images: section.images.filter(img => {
@@ -1901,7 +1938,9 @@ export default function CT_TestReport_Report() {
         volume: {
           ...prev.cautions.volume,
           sections: prev.cautions.volume.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, isDragging: true } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId) 
+              ? { ...section, isDragging: true } 
+              : section
           )
         }
       }
@@ -1916,7 +1955,9 @@ export default function CT_TestReport_Report() {
         volume: {
           ...prev.cautions.volume,
           sections: prev.cautions.volume.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, isDragging: false } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId) 
+              ? { ...section, isDragging: false } 
+              : section
           )
         }
       }
@@ -1932,7 +1973,9 @@ export default function CT_TestReport_Report() {
         volume: {
           ...prev.cautions.volume,
           sections: prev.cautions.volume.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, isDragging: false } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId) 
+              ? { ...section, isDragging: false } 
+              : section
           )
         }
       }
@@ -1951,7 +1994,7 @@ export default function CT_TestReport_Report() {
         volume: {
           ...prev.cautions.volume,
           sections: prev.cautions.volume.sections.map(section =>
-            section.ct_test_caution_id === sectionId
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
               ? { ...section, hoveredImageIndex: index }
               : section
           )
@@ -1968,7 +2011,7 @@ export default function CT_TestReport_Report() {
         volume: {
           ...prev.cautions.volume,
           sections: prev.cautions.volume.sections.map(section =>
-            section.ct_test_caution_id === sectionId
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
               ? { ...section, hoveredImageIndex: null }
               : section
           )
@@ -1984,7 +2027,8 @@ export default function CT_TestReport_Report() {
   const handleAddPackagingSection = () => {
     setReportData(prev => {
       const newSection = {
-        ct_test_caution_id: packagingSectionIdCounter.current++,
+        tempId: `packaging_${packagingSectionIdCounter.current++}`,
+        ct_test_caution_id: undefined,
         ct_test_report_id: reportId || "",
         caution_type: "packaging",
         section_title: t.packaging,
@@ -2010,7 +2054,9 @@ export default function CT_TestReport_Report() {
   const handleRemovePackagingSection = (sectionId) => {
     if(confirm("이 섹션을 삭제하시겠습니까?")) {
       setReportData(prev => {
-        const section = prev.cautions.packaging.sections.find(s => s.ct_test_caution_id === sectionId);
+        const section = prev.cautions.packaging.sections.find(s => 
+          (s.ct_test_caution_id && s.ct_test_caution_id === sectionId) || s.tempId === sectionId
+        );
         if(section) {
           section.images.forEach(img => URL.revokeObjectURL(img.file_url || img.preview));
         }
@@ -2020,7 +2066,11 @@ export default function CT_TestReport_Report() {
             ...prev.cautions,
             packaging: {
               ...prev.cautions.packaging,
-              sections: prev.cautions.packaging.sections.filter(s => s.ct_test_caution_id !== sectionId)
+              sections: prev.cautions.packaging.sections.filter(s => 
+                (s.ct_test_caution_id && s.ct_test_caution_id !== sectionId) ||
+                (s.tempId && s.tempId !== sectionId) ||
+                (!s.ct_test_caution_id && !s.tempId)
+              )
             }
           }
         };
@@ -2036,7 +2086,9 @@ export default function CT_TestReport_Report() {
         packaging: {
           ...prev.cautions.packaging,
           sections: prev.cautions.packaging.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, section_title } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, section_title } 
+              : section
           )
         }
       }
@@ -2051,7 +2103,9 @@ export default function CT_TestReport_Report() {
         packaging: {
           ...prev.cautions.packaging,
           sections: prev.cautions.packaging.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, section_content } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, section_content } 
+              : section
           )
         }
       }
@@ -2067,7 +2121,7 @@ export default function CT_TestReport_Report() {
           packaging: {
             ...prev.cautions.packaging,
             sections: prev.cautions.packaging.sections.map(section =>
-              section.ct_test_caution_id === sectionId
+              ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
                 ? { ...section, images: [...section.images, ...newImages] }
                 : section
             )
@@ -2085,7 +2139,7 @@ export default function CT_TestReport_Report() {
         packaging: {
           ...prev.cautions.packaging,
           sections: prev.cautions.packaging.sections.map(section =>
-            section.ct_test_caution_id === sectionId
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
               ? {
                   ...section,
                   images: section.images.filter(img => {
@@ -2100,7 +2154,7 @@ export default function CT_TestReport_Report() {
         }
       }
     }));
-    setDeletedAttachmentIds(prev => [...prev, { ct_test_report_attachment_id: imageId }]); // 삭제할 첨부파일 ID 저장 (서버 전송용)
+    setDeletedAttachmentIds(prev => [...prev, { ct_test_report_attachment_id: imageId }]);
   };
 
   const handlePackagingSectionDragOver = (sectionId, e) => {
@@ -2112,7 +2166,9 @@ export default function CT_TestReport_Report() {
         packaging: {
           ...prev.cautions.packaging,
           sections: prev.cautions.packaging.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, isDragging: true } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, isDragging: true } 
+              : section
           )
         }
       }
@@ -2127,7 +2183,9 @@ export default function CT_TestReport_Report() {
         packaging: {
           ...prev.cautions.packaging,
           sections: prev.cautions.packaging.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, isDragging: false } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, isDragging: false } 
+              : section
           )
         }
       }
@@ -2143,7 +2201,9 @@ export default function CT_TestReport_Report() {
         packaging: {
           ...prev.cautions.packaging,
           sections: prev.cautions.packaging.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, isDragging: false } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, isDragging: false } 
+              : section
           )
         }
       }
@@ -2159,7 +2219,7 @@ export default function CT_TestReport_Report() {
         packaging: {
           ...prev.cautions.packaging,
           sections: prev.cautions.packaging.sections.map(section =>
-            section.ct_test_caution_id === sectionId
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
               ? { ...section, hoveredImageIndex: index }
               : section
           )
@@ -2176,7 +2236,7 @@ export default function CT_TestReport_Report() {
         packaging: {
           ...prev.cautions.packaging,
           sections: prev.cautions.packaging.sections.map(section =>
-            section.ct_test_caution_id === sectionId
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
               ? { ...section, hoveredImageIndex: null }
               : section
           )
@@ -2192,7 +2252,8 @@ export default function CT_TestReport_Report() {
   const handleAddCompatibilitySection = () => {
     setReportData(prev => {
       const newSection = {
-        ct_test_caution_id: compatibilitySectionIdCounter.current++,
+        tempId: `compatibility_${compatibilitySectionIdCounter.current++}`,
+        ct_test_caution_id: undefined,
         ct_test_report_id: reportId || "",
         caution_type: "compatibility",
         section_title: t.compatibility,
@@ -2218,7 +2279,9 @@ export default function CT_TestReport_Report() {
   const handleRemoveCompatibilitySection = (sectionId) => {
     if(confirm("이 섹션을 삭제하시겠습니까?")) {
       setReportData(prev => {
-        const section = prev.cautions.compatibility.sections.find(s => s.ct_test_caution_id === sectionId);
+        const section = prev.cautions.compatibility.sections.find(s => 
+          (s.ct_test_caution_id && s.ct_test_caution_id === sectionId) || s.tempId === sectionId
+        );
         if(section) {
           section.images.forEach(img => URL.revokeObjectURL(img.file_url || img.preview));
         }
@@ -2228,7 +2291,11 @@ export default function CT_TestReport_Report() {
             ...prev.cautions,
             compatibility: {
               ...prev.cautions.compatibility,
-              sections: prev.cautions.compatibility.sections.filter(s => s.ct_test_caution_id !== sectionId)
+              sections: prev.cautions.compatibility.sections.filter(s => 
+                (s.ct_test_caution_id && s.ct_test_caution_id !== sectionId) ||
+                (s.tempId && s.tempId !== sectionId) ||
+                (!s.ct_test_caution_id && !s.tempId)
+              )
             }
           }
         };
@@ -2244,7 +2311,9 @@ export default function CT_TestReport_Report() {
         compatibility: {
           ...prev.cautions.compatibility,
           sections: prev.cautions.compatibility.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, section_title } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, section_title } 
+              : section
           )
         }
       }
@@ -2259,7 +2328,9 @@ export default function CT_TestReport_Report() {
         compatibility: {
           ...prev.cautions.compatibility,
           sections: prev.cautions.compatibility.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, section_content } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, section_content } 
+              : section
           )
         }
       }
@@ -2275,7 +2346,7 @@ export default function CT_TestReport_Report() {
           compatibility: {
             ...prev.cautions.compatibility,
             sections: prev.cautions.compatibility.sections.map(section =>
-              section.ct_test_caution_id === sectionId
+              ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
                 ? { ...section, images: [...section.images, ...newImages] }
                 : section
             )
@@ -2293,7 +2364,7 @@ export default function CT_TestReport_Report() {
         compatibility: {
           ...prev.cautions.compatibility,
           sections: prev.cautions.compatibility.sections.map(section =>
-            section.ct_test_caution_id === sectionId
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
               ? {
                   ...section,
                   images: section.images.filter(img => {
@@ -2308,7 +2379,7 @@ export default function CT_TestReport_Report() {
         }
       }
     }));
-    setDeletedAttachmentIds(prev => [...prev, { ct_test_report_attachment_id: imageId }]); // 삭제할 첨부파일 ID 저장 (서버 전송용)
+    setDeletedAttachmentIds(prev => [...prev, { ct_test_report_attachment_id: imageId }]);
   };
 
   const handleCompatibilitySectionDragOver = (sectionId, e) => {
@@ -2320,7 +2391,9 @@ export default function CT_TestReport_Report() {
         compatibility: {
           ...prev.cautions.compatibility,
           sections: prev.cautions.compatibility.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, isDragging: true } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, isDragging: true } 
+              : section
           )
         }
       }
@@ -2335,7 +2408,9 @@ export default function CT_TestReport_Report() {
         compatibility: {
           ...prev.cautions.compatibility,
           sections: prev.cautions.compatibility.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, isDragging: false } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, isDragging: false } 
+              : section
           )
         }
       }
@@ -2351,7 +2426,9 @@ export default function CT_TestReport_Report() {
         compatibility: {
           ...prev.cautions.compatibility,
           sections: prev.cautions.compatibility.sections.map(section =>
-            section.ct_test_caution_id === sectionId ? { ...section, isDragging: false } : section
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
+              ? { ...section, isDragging: false } 
+              : section
           )
         }
       }
@@ -2367,7 +2444,7 @@ export default function CT_TestReport_Report() {
         compatibility: {
           ...prev.cautions.compatibility,
           sections: prev.cautions.compatibility.sections.map(section =>
-            section.ct_test_caution_id === sectionId
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
               ? { ...section, hoveredImageIndex: index }
               : section
           )
@@ -2384,7 +2461,7 @@ export default function CT_TestReport_Report() {
         compatibility: {
           ...prev.cautions.compatibility,
           sections: prev.cautions.compatibility.sections.map(section =>
-            section.ct_test_caution_id === sectionId
+            ((section.ct_test_caution_id && section.ct_test_caution_id === sectionId) || section.tempId === sectionId)
               ? { ...section, hoveredImageIndex: null }
               : section
           )
@@ -2581,6 +2658,26 @@ export default function CT_TestReport_Report() {
 
       const response = await axios.get("/api/ltms/ct/test-report/detail", { params });
       const data = response.data.data.result;
+
+      // 시험 항목 첨부파일을 attachedImage로 변환
+      if (data.testItems && data.testItems.length > 0) {
+        data.testItems = data.testItems.map(item => {
+          if (item.attachments && item.attachments.length > 0) {
+            // 첫 번째 첨부파일을 attachedImage로 설정
+            const firstAttachment = item.attachments[0];
+            return {
+              ...item,
+              attachedImage: {
+                ct_test_report_attachment_id: firstAttachment.id,
+                file_url: firstAttachment.url,
+                file_name: firstAttachment.name,
+                file_size: firstAttachment.size
+              }
+            };
+          }
+          return item;
+        });
+      }
 
       setReportData(data);
 
@@ -3169,9 +3266,9 @@ export default function CT_TestReport_Report() {
                               <span 
                                 className="test-item-image-filename"
                                 onClick={() => handleImageClick(item.attachedImage)}
-                                title={item.attachedImage.name}
+                                title={item.attachedImage.name || item.attachedImage.file_name}
                               >
-                                {item.attachedImage.name}
+                                {item.attachedImage.name || item.attachedImage.file_name}
                               </span>
                               {/* 이미지 삭제 버튼 */}
                               <button
@@ -3235,91 +3332,94 @@ export default function CT_TestReport_Report() {
                       <td>
                         <div id="dynamic-volume-section">
                         {/* 용량 동적 섹션 렌더링 */}
-                        {reportData.cautions.volume.sections.map((section, index) => (
-                        <div key={index} className="caution-dynamic-section">
-                          <div className="caution-base-header">
-                            <input 
-                              type="text" 
-                              className="tac" 
-                              value={section.section_title || ""}
-                              onChange={(e) => handleVolumeSectionLabelChange(section.ct_test_caution_id, e.target.value)}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveVolumeSection(section.ct_test_caution_id)}
-                              className="caution-section-delete-btn btn-none"
-                            >
-                              ❌
-                            </button>
-                          </div>
-                          <textarea
-                            ref={(el) => volumeSectionTextareaRefs.current[section.ct_test_caution_id] = el}
-                            rows="3"
-                            style={{ width: "100%" }}
-                            value={section.section_content || ""}
-                            onChange={(e) => handleVolumeSectionTextChange(section.ct_test_caution_id, e.target.value)}
-                            placeholder={t.placeholders.volumeContent}
-                          />
-                          <div>
-                            <div
-                              className={`material-image-drop-area ${section.isDragging ? 'dragging' : ''}`}
-                              onDragOver={(e) => handleVolumeSectionDragOver(section.ct_test_caution_id, e)}
-                              onDragLeave={() => handleVolumeSectionDragLeave(section.ct_test_caution_id)}
-                              onDrop={(e) => handleVolumeSectionDrop(section.ct_test_caution_id, e)}
-                              style={{ minHeight: "40px" }}
-                            >
-                              <input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                onChange={(e) => {
-                                  if(e.target.files.length > 0) {
-                                    handleVolumeSectionImageAdd(section.ct_test_caution_id, e.target.files);
-                                    e.target.value = "";
-                                  }
-                                }}
-                                style={{ display: "none" }}
-                                id={`volume-section-input-${section.ct_test_caution_id}`}
+                        {reportData.cautions.volume.sections.map((section, index) => {
+                          const sectionId = section.ct_test_caution_id || section.tempId;
+                          return (
+                            <div key={sectionId} className="caution-dynamic-section">
+                              <div className="caution-base-header">
+                                <input 
+                                  type="text" 
+                                  className="tac" 
+                                  value={section.section_title || ""}
+                                  onChange={(e) => handleVolumeSectionLabelChange(sectionId, e.target.value)}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveVolumeSection(sectionId)}
+                                  className="caution-section-delete-btn btn-none"
+                                >
+                                  ❌
+                                </button>
+                              </div>
+                              <textarea
+                                ref={(el) => volumeSectionTextareaRefs.current[sectionId] = el}
+                                rows="3"
+                                style={{ width: "100%" }}
+                                value={section.section_content || ""}
+                                onChange={(e) => handleVolumeSectionTextChange(sectionId, e.target.value)}
+                                placeholder={t.placeholders.volumeContent}
                               />
-                              {section.images.length === 0 ? (
-                                <p className="material-image-drop-area-placeholder">{t.placeholders.dragImage}</p>
-                              ) : (
-                                <div className="material-image-grid">
-                                  {section.images.map((image, index) => (
-                                    <div
-                                      key={index}
-                                      className="material-image-item"
-                                      onMouseEnter={() => handleVolumeSectionMouseEnter(section.ct_test_caution_id, index)}
-                                      onMouseLeave={() => handleVolumeSectionMouseLeave(section.ct_test_caution_id)}
-                                      onClick={() => handleImageClick(image)}
-                                      style={{ cursor: "pointer" }}
-                                    >
-                                      <img
-                                        src={image.file_url ? `${API_BASE_URL}/api${image.file_url}` : image.preview}
-                                        alt={`volume-section-${section.ct_test_caution_id}-img-${index}`}
-                                      />
-                                      {section.hoveredImageIndex === index && (
-                                        <div className="material-image-overlay">
-                                          <button
-                                            type="button"
-                                            className="material-image-delete-btn"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleVolumeSectionImageRemove(section.ct_test_caution_id, image.ct_test_report_attachment_id || image.id);
-                                            }}
-                                          >
-                                            ✕
-                                          </button>
+                              <div>
+                                <div
+                                  className={`material-image-drop-area ${section.isDragging ? 'dragging' : ''}`}
+                                  onDragOver={(e) => handleVolumeSectionDragOver(sectionId, e)}
+                                  onDragLeave={() => handleVolumeSectionDragLeave(sectionId)}
+                                  onDrop={(e) => handleVolumeSectionDrop(sectionId, e)}
+                                  style={{ minHeight: "40px" }}
+                                >
+                                  <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      if(e.target.files.length > 0) {
+                                        handleVolumeSectionImageAdd(sectionId, e.target.files);
+                                        e.target.value = "";
+                                      }
+                                    }}
+                                    style={{ display: "none" }}
+                                    id={`volume-section-input-${sectionId}`}
+                                  />
+                                  {section.images.length === 0 ? (
+                                    <p className="material-image-drop-area-placeholder">{t.placeholders.dragImage}</p>
+                                  ) : (
+                                    <div className="material-image-grid">
+                                      {section.images.map((image, imgIndex) => (
+                                        <div
+                                          key={imgIndex}
+                                          className="material-image-item"
+                                          onMouseEnter={() => handleVolumeSectionMouseEnter(sectionId, imgIndex)}
+                                          onMouseLeave={() => handleVolumeSectionMouseLeave(sectionId)}
+                                          onClick={() => handleImageClick(image)}
+                                          style={{ cursor: "pointer" }}
+                                        >
+                                          <img
+                                            src={image.file_url ? `${API_BASE_URL}/api${image.file_url}` : image.preview}
+                                            alt={`volume-section-${sectionId}-img-${imgIndex}`}
+                                          />
+                                          {section.hoveredImageIndex === imgIndex && (
+                                            <div className="material-image-overlay">
+                                              <button
+                                                type="button"
+                                                className="material-image-delete-btn"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleVolumeSectionImageRemove(sectionId, image.ct_test_report_attachment_id || image.id);
+                                                }}
+                                              >
+                                                ✕
+                                              </button>
+                                            </div>
+                                          )}
                                         </div>
-                                      )}
+                                      ))}
                                     </div>
-                                  ))}
+                                  )}
                                 </div>
-                              )}
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                        ))}
+                          );
+                        })}
                         </div>
                       </td>
                     </tr>
@@ -3334,37 +3434,39 @@ export default function CT_TestReport_Report() {
                       <td>
                         <div id="dynamic-packaging-section">
                           {/* 포장재 동적 섹션 렌더링 */}
-                          {reportData.cautions.packaging.sections.map((section, index) => (
-                          <div key={index} className="caution-dynamic-section">
+                          {reportData.cautions.packaging.sections.map((section, index) => {
+                            const sectionId = section.ct_test_caution_id || section.tempId;
+                            return (
+                          <div key={sectionId} className="caution-dynamic-section">
                             <div className="caution-base-header">
                               <input 
                                 type="text" 
                                 className="tac" 
                                 value={section.section_title || ""}
-                                onChange={(e) => handlePackagingSectionLabelChange(section.ct_test_caution_id, e.target.value)}
+                                onChange={(e) => handlePackagingSectionLabelChange(sectionId, e.target.value)}
                               />
                               <button
                                 type="button"
-                                onClick={() => handleRemovePackagingSection(section.ct_test_caution_id)}
+                                onClick={() => handleRemovePackagingSection(sectionId)}
                                 className="caution-section-delete-btn btn-none"
                               >
                                 ❌
                               </button>
                             </div>
                             <textarea
-                              ref={(el) => packagingSectionTextareaRefs.current[section.ct_test_caution_id] = el}
+                              ref={(el) => packagingSectionTextareaRefs.current[sectionId] = el}
                               rows="3"
                               style={{ width: "100%" }}
                               value={section.section_content || ""}
-                              onChange={(e) => handlePackagingSectionTextChange(section.ct_test_caution_id, e.target.value)}
+                              onChange={(e) => handlePackagingSectionTextChange(sectionId, e.target.value)}
                               placeholder={t.placeholders.packagingContent}
                             />
                             <div>
                               <div
                                 className={`material-image-drop-area ${section.isDragging ? 'dragging' : ''}`}
-                                onDragOver={(e) => handlePackagingSectionDragOver(section.ct_test_caution_id, e)}
-                                onDragLeave={() => handlePackagingSectionDragLeave(section.ct_test_caution_id)}
-                                onDrop={(e) => handlePackagingSectionDrop(section.ct_test_caution_id, e)}
+                                onDragOver={(e) => handlePackagingSectionDragOver(sectionId, e)}
+                                onDragLeave={() => handlePackagingSectionDragLeave(sectionId)}
+                                onDrop={(e) => handlePackagingSectionDrop(sectionId, e)}
                                 style={{ minHeight: "40px" }}
                               >
                                 <input
@@ -3373,38 +3475,38 @@ export default function CT_TestReport_Report() {
                                   accept="image/*"
                                   onChange={(e) => {
                                     if(e.target.files.length > 0) {
-                                      handlePackagingSectionImageAdd(section.ct_test_caution_id, e.target.files);
+                                      handlePackagingSectionImageAdd(sectionId, e.target.files);
                                       e.target.value = "";
                                     }
                                   }}
                                   style={{ display: "none" }}
-                                  id={`packaging-section-input-${section.ct_test_caution_id}`}
+                                  id={`packaging-section-input-${sectionId}`}
                                 />
                                 {section.images.length === 0 ? (
                                   <p className="material-image-drop-area-placeholder">{t.dragImagePlaceholder}</p>
                                 ) : (
                                   <div className="material-image-grid">
-                                    {section.images.map((image, index) => (
+                                    {section.images.map((image, imgIndex) => (
                                       <div
-                                        key={index}
+                                        key={imgIndex}
                                         className="material-image-item"
-                                        onMouseEnter={() => handlePackagingSectionMouseEnter(section.ct_test_caution_id, index)}
-                                        onMouseLeave={() => handlePackagingSectionMouseLeave(section.ct_test_caution_id)}
+                                        onMouseEnter={() => handlePackagingSectionMouseEnter(sectionId, imgIndex)}
+                                        onMouseLeave={() => handlePackagingSectionMouseLeave(sectionId)}
                                         onClick={() => handleImageClick(image)}
                                         style={{ cursor: "pointer" }}
                                       >
                                         <img
                                           src={image.file_url ? `${API_BASE_URL}/api${image.file_url}` : image.preview}
-                                          alt={`packaging-section-${section.ct_test_caution_id}-img-${index}`}
+                                          alt={`packaging-section-${sectionId}-img-${imgIndex}`}
                                         />
-                                        {section.hoveredImageIndex === index && (
+                                        {section.hoveredImageIndex === imgIndex && (
                                           <div className="material-image-overlay">
                                             <button
                                               type="button"
                                               className="material-image-delete-btn"
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                handlePackagingSectionImageRemove(section.ct_test_caution_id, image.ct_test_report_attachment_id || image.id);
+                                                handlePackagingSectionImageRemove(sectionId, image.ct_test_report_attachment_id || image.id);
                                               }}
                                             >
                                               ✕
@@ -3418,7 +3520,8 @@ export default function CT_TestReport_Report() {
                               </div>
                             </div>
                           </div>
-                          ))}
+                          );
+                        })}
                         </div>
                       </td>
                     </tr>
@@ -3433,37 +3536,39 @@ export default function CT_TestReport_Report() {
                       <td>
                         <div id="dynamic-compatibility-section">
                           {/* 상용성 동적 섹션 렌더링 */}
-                          {reportData.cautions.compatibility.sections.map((section, index) => (
-                          <div key={index} className="caution-dynamic-section">
+                          {reportData.cautions.compatibility.sections.map((section, index) => {
+                            const sectionId = section.ct_test_caution_id || section.tempId;
+                            return (
+                          <div key={sectionId} className="caution-dynamic-section">
                             <div className="caution-base-header">
                               <input 
                                 type="text" 
                                 className="tac" 
                                 value={section.section_title || ""}
-                                onChange={(e) => handleCompatibilitySectionLabelChange(section.ct_test_caution_id, e.target.value)}
+                                onChange={(e) => handleCompatibilitySectionLabelChange(sectionId, e.target.value)}
                               />
                               <button
                                 type="button"
-                                onClick={() => handleRemoveCompatibilitySection(section.ct_test_caution_id)}
+                                onClick={() => handleRemoveCompatibilitySection(sectionId)}
                                 className="caution-section-delete-btn btn-none"
                               >
                                 ❌
                               </button>
                             </div>
                             <textarea
-                              ref={(el) => compatibilitySectionTextareaRefs.current[section.ct_test_caution_id] = el}
+                              ref={(el) => compatibilitySectionTextareaRefs.current[sectionId] = el}
                               rows="3"
                               style={{ width: "100%" }}
                               value={section.section_content || ""}
-                              onChange={(e) => handleCompatibilitySectionTextChange(section.ct_test_caution_id, e.target.value)}
+                              onChange={(e) => handleCompatibilitySectionTextChange(sectionId, e.target.value)}
                               placeholder={t.placeholders.compatibilityContent}
                             />
                             <div>
                               <div
                                 className={`material-image-drop-area ${section.isDragging ? 'dragging' : ''}`}
-                                onDragOver={(e) => handleCompatibilitySectionDragOver(section.ct_test_caution_id, e)}
-                                onDragLeave={() => handleCompatibilitySectionDragLeave(section.ct_test_caution_id)}
-                                onDrop={(e) => handleCompatibilitySectionDrop(section.ct_test_caution_id, e)}
+                                onDragOver={(e) => handleCompatibilitySectionDragOver(sectionId, e)}
+                                onDragLeave={() => handleCompatibilitySectionDragLeave(sectionId)}
+                                onDrop={(e) => handleCompatibilitySectionDrop(sectionId, e)}
                                 style={{ minHeight: "40px" }}
                               >
                                 <input
@@ -3472,38 +3577,38 @@ export default function CT_TestReport_Report() {
                                   accept="image/*"
                                   onChange={(e) => {
                                     if(e.target.files.length > 0) {
-                                      handleCompatibilitySectionImageAdd(section.ct_test_caution_id, e.target.files);
+                                      handleCompatibilitySectionImageAdd(sectionId, e.target.files);
                                       e.target.value = "";
                                     }
                                   }}
                                   style={{ display: "none" }}
-                                  id={`compatibility-section-input-${section.ct_test_caution_id}`}
+                                  id={`compatibility-section-input-${sectionId}`}
                                 />
                                 {section.images.length === 0 ? (
                                   <p className="material-image-drop-area-placeholder">{t.dragImagePlaceholder}</p>
                                 ) : (
                                   <div className="material-image-grid">
-                                    {section.images.map((image, index) => (
+                                    {section.images.map((image, imgIndex) => (
                                       <div
-                                        key={index}
+                                        key={imgIndex}
                                         className="material-image-item"
-                                        onMouseEnter={() => handleCompatibilitySectionMouseEnter(section.ct_test_caution_id, index)}
-                                        onMouseLeave={() => handleCompatibilitySectionMouseLeave(section.ct_test_caution_id)}
+                                        onMouseEnter={() => handleCompatibilitySectionMouseEnter(sectionId, imgIndex)}
+                                        onMouseLeave={() => handleCompatibilitySectionMouseLeave(sectionId)}
                                         onClick={() => handleImageClick(image)}
                                         style={{ cursor: "pointer" }}
                                       >
                                         <img
                                           src={image.file_url ? `${API_BASE_URL}/api${image.file_url}` : image.preview}
-                                          alt={`compatibility-section-${section.ct_test_caution_id}-img-${index}`}
+                                          alt={`compatibility-section-${sectionId}-img-${imgIndex}`}
                                         />
-                                        {section.hoveredImageIndex === index && (
+                                        {section.hoveredImageIndex === imgIndex && (
                                           <div className="material-image-overlay">
                                             <button
                                               type="button"
                                               className="material-image-delete-btn"
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleCompatibilitySectionImageRemove(section.ct_test_caution_id, image.ct_test_report_attachment_id || image.id);
+                                                handleCompatibilitySectionImageRemove(sectionId, image.ct_test_report_attachment_id || image.id);
                                               }}
                                             >
                                               ✕
@@ -3517,7 +3622,8 @@ export default function CT_TestReport_Report() {
                               </div>
                             </div>
                           </div>
-                          ))}
+                          );
+                        })}
                         </div>
                       </td>
                     </tr>

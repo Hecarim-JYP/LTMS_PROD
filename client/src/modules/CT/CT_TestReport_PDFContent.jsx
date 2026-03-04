@@ -317,11 +317,18 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
                     <td rowSpan={2} className="material-image-td">
                       {requestInfo?.images && requestInfo.images.length > 0 ? (
                         <div className="material-image-grid">
-                          {requestInfo.images.map((image, index) => (
-                            <div key={index}>
-                              <img src={image.preview} alt={`preview-${index}`} />
-                            </div>
-                          ))}
+                          {requestInfo.images.map((image, index) => {
+                            // 홀수 개일 때 마지막 이미지는 중앙 정렬
+                            const isLastOdd = requestInfo.images.length % 2 === 1 && index === requestInfo.images.length - 1;
+                            return (
+                              <div 
+                                key={index}
+                                style={isLastOdd ? { gridColumn: '1 / -1', justifySelf: 'center' } : {}}
+                              >
+                                <img src={image.preview} alt={`preview-${index}`} />
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : null}
                     </td>
@@ -361,38 +368,59 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
                 </thead>
                 <tbody>
                   {testItems.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        <div className="test-item-no tac">
-                          {item.test_standard_code || '-'}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="test-item-text tac">
-                          {item.test_standard_name || '-'}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="test-item-text">
-                          {item.test_guide || '-'}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="test-item-result tac">
-                          {item.test_result || '-'}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="test-item-opinion">
-                          {item.remark || '-'}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="test-item-opinion">
-                          {item.note || '-'}
-                        </div>
-                      </td>
-                    </tr>
+                    <React.Fragment key={item.id}>
+                      <tr>
+                        <td>
+                          <div className="test-item-no tac">
+                            {item.test_standard_code || '-'}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="test-item-text tac">
+                            {item.test_standard_name || '-'}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="test-item-text">
+                            {item.test_guide || '-'}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="test-item-result tac">
+                            {item.test_result || '-'}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="test-item-opinion">
+                            {item.remark || '-'}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="test-item-opinion">
+                            {item.note || '-'}
+                          </div>
+                        </td>
+                      </tr>
+                      {/* 첨부 이미지가 있는 경우 별도 행으로 표시 */}
+                      {item.attachedImage && item.attachedImage.preview && (
+                        <tr>
+                          <td colSpan={6} style={{ padding: '8px', textAlign: 'center' }}>
+                            <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+                              <img 
+                                src={item.attachedImage.preview} 
+                                alt={item.attachedImage.name || 'test-item-image'} 
+                                style={{ maxWidth: '100%', height: 'auto', border: '1px solid #ddd' }}
+                              />
+                              {item.attachedImage.name && (
+                                <div style={{ marginTop: '4px', fontSize: '12px', color: '#666' }}>
+                                  {item.attachedImage.name}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

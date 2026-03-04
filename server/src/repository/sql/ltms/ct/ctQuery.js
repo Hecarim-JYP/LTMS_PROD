@@ -11,13 +11,13 @@ import * as utils from '../../../../common/utils.js';
 
 /* ============================== 의뢰 ============================== */
 /**
- * selectCtList : CT 데이터 조회
+ * findCtRequests : CT 의뢰 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} params : 조회 파라미터(CT_Request_Read.jsx 화면의 searchForm 객체)
- * @returns {Promise<Array<Object>>} : CT 목록 조회 결과
+ * @returns {Promise<Array<Object>>} : CT 의뢰 목록 조회 결과
  */
-export const selectCtList = async (conn, params) => {
+export const findCtRequests = async (conn, params) => {
 
   const queryParams = {
     search_type: params.search_type,
@@ -27,7 +27,7 @@ export const selectCtList = async (conn, params) => {
   let dateColumn = 'cr.ct_request_date'; // 기본값: REQ이며, CT의뢰일자로 조회.
   
   let query = `
-    /* selectCtList : CT 데이터 조회 */
+    /* findCtRequests : CT 데이터 조회 */
     SELECT
       cr.ct_request_id                                  AS ct_request_id
       , cr.ct_no                                        AS ct_no
@@ -224,16 +224,16 @@ export const selectCtList = async (conn, params) => {
 };
 
 /**
- * selectCtDataByCtId : CT 단일 데이터 조회
+ * findCtRequestById : CT 의뢰 단일 데이터 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터  
  * @returns {Promise<Array<Object>>} : CT 의뢰 정보와 샘플 제형 정보
  */
-export const selectCtDataByCtId = async (conn, queryParams) => {
+export const findCtRequestById = async (conn, queryParams) => {
 
   let sqlCtInfo = `
-    /* selectCtInfo : CT 단일 데이터 조회 CT데이터 조회 */
+    /* findCtRequestById : CT 의뢰 단일 데이터 조회 */
     SELECT
       cr.ct_request_id                                                                  AS ct_request_id
       , DATE_FORMAT(cr.ct_request_date, '%Y-%m-%d')                                     AS ct_request_date
@@ -333,16 +333,16 @@ export const selectCtDataByCtId = async (conn, queryParams) => {
 
 
 /**
- * selectRecentCtNo : 최신 CT 번호 조회
+ * findRecentCtNo : 최신 CT 번호 조회
  * --------------------------------------------
  * HOW : CT + 연도(4자리) + 4자리 일련번호
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns {Promise<Object>} : 최신 CT 번호
  */
-export const selectRecentCtNo = async(conn, queryParams) => {
+export const findRecentCtNo = async(conn, queryParams) => {
   const query = `
-    /* selectRecentCtNo : 최신 CT 번호 조회 */
+    /* findRecentCtNo : 최신 CT 번호 조회 */
     SELECT
       CONCAT(
         'CT',
@@ -364,16 +364,16 @@ export const selectRecentCtNo = async(conn, queryParams) => {
 
 
 /**
- * insertCtRequest : CT 데이터 생성
+ * saveCtRequest : CT 데이터 생성
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 생성할 데이터
  * @returns {Promise<Object>} : 생성된 데이터
  */
-export const insertCtRequest = async (conn, queryParams) => {
+export const saveCtRequest = async (conn, queryParams) => {
   
   const query = `
-    /* insertCtRequest : CT 데이터 생성 */
+    /* saveCtRequest : CT 데이터 생성 */
     INSERT INTO ct_request (
       ct_request_date,
       ct_no,
@@ -474,13 +474,13 @@ export const insertCtRequest = async (conn, queryParams) => {
 
 
 /**
- * insertCtSamples : CT 샘플 저장
+ * saveCtSamples : CT 샘플 저장
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} samplesData : 저장할 샘플 데이터 배열 (서비스 레이어에서 정제된 파라미터)
  * @returns {Promise<Object>} : 저장 결과
  */
-export const insertCtSamples = async (conn, samplesData) => {
+export const saveCtSamples = async (conn, samplesData) => {
 
   // 빈 배열 체크는 Service에서 이미 했지만, 방어 코드로 한 번 더 체크
   if (!samplesData || samplesData.length === 0) {
@@ -491,7 +491,7 @@ export const insertCtSamples = async (conn, samplesData) => {
   }
   
   const query = `
-    /* insertCtSamples : CT 샘플 저장 */
+    /* saveCtSamples : CT 샘플 저장 */
     INSERT INTO ct_request_sample (
       company_id,
       ct_request_id,
@@ -641,13 +641,13 @@ export const deactivateCtSamples = async (conn, queryParams) => {
 
 /* ============================== 시험성적서 ============================== */
 /**
- * selectTestReportList : CT 의뢰 ID로 시험 성적서 조회
+ * findTestReports : CT 의뢰 ID로 시험 성적서 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 {company_id ..}
  * @returns {Promise<Array>} : 시험 성적서 데이터 배열
  */
-export const selectTestReportList = async (conn, params) => {
+export const findTestReports = async (conn, params) => {
 
   const queryParams = {
     company_id: params.company_id
@@ -665,7 +665,7 @@ export const selectTestReportList = async (conn, params) => {
   }
 
   let query = `
-    /* selectTestReportList : CT 의뢰 ID로 시험 성적서 조회 */
+    /* findTestReports : CT 의뢰 ID로 시험 성적서 조회 */
     SELECT
       ctr.ct_test_report_id                           AS ct_test_report_id,
       ctr.ct_request_id                               AS ct_request_id,
@@ -746,16 +746,16 @@ export const selectTestReportList = async (conn, params) => {
 
 
 /**
- * selectTestReportByCtRequestId : ct_request_id로 시험 성적서 존재 여부 확인
+ * findTestReportByCtRequestId : ct_request_id로 시험 성적서 존재 여부 확인
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 {company_id, ct_request_id}
  * @returns {Promise<Object|null>} : 시험 성적서 데이터 또는 null
  */
-export const selectTestReportByCtRequestId = async (conn, queryParams) => {
+export const findTestReportByCtRequestId = async (conn, queryParams) => {
 
   const query = `
-    /* selectTestReportByCtRequestId : ct_request_id로 시험 성적서 조회 */
+    /* findTestReportByCtRequestId : ct_request_id로 시험 성적서 조회 */
     SELECT
       COUNT(1) AS REPORT_COUNT
     FROM
@@ -773,7 +773,7 @@ export const selectTestReportByCtRequestId = async (conn, queryParams) => {
 
 
 /**
- * insertTestReport : 시험 성적서 생성
+ * saveTestReport : 시험 성적서 생성
  * --------------------------------------------
  * HOW : ct_request에 존재하는 중복 컴럼을 제외하고, 시험 성적서 고유 데이터만 저장
  * WHY : 데이터 정규화, 중복 방지, 일관성 유지 (ct_request_id로 JOIN 하여 조회)
@@ -782,10 +782,10 @@ export const selectTestReportByCtRequestId = async (conn, queryParams) => {
  * @param {*} queryParams : 생성할 시험 성적서 데이터
  * @returns {Promise<string>} : 생성된 시험 성적서 ID (문자열)
  */
-export const insertTestReport = async (conn, queryParams) => {
+export const saveTestReport = async (conn, queryParams) => {
 
   const query = `
-    /* insertTestReport : 시험 성적서 생성 */
+    /* saveTestReport : 시험 성적서 생성 */
     INSERT INTO ct_test_report (
       company_id,
       ct_request_id,
@@ -872,16 +872,16 @@ export const updateCtRequestFromTestReport = async (conn, queryParams) => {
 
 /* ============================== 결재 ============================== */
 /**
- * selectApprovalTemplate : 결재 템플릿 조회
+ * findApprovalTemplates : 결재 템플릿 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 {company_id, document_type}
  * @returns {Promise<Array<Object>>} : 결재 템플릿 목록
  */
-export const selectApprovalTemplate = async (conn, queryParams) => {
+export const findApprovalTemplates = async (conn, queryParams) => {
 
   const query = `
-    /* selectApprovalTemplates : 결재 템플릿 조회 */
+    /* findApprovalTemplates : 결재 템플릿 조회 */
     SELECT
       at.approval_template_id                               AS approval_template_id,
       at.template_name                                      AS template_name
@@ -902,16 +902,16 @@ export const selectApprovalTemplate = async (conn, queryParams) => {
 
 
 /**
- * insertApprovalDocument : 결재 문서 생성
+ * saveApprovalDocument : 결재 문서 생성
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 생성할 결재 문서 데이터
  * @returns {Promise<number>} : 생성된 결재 문서 ID
  */
-export const insertApprovalDocument = async (conn, queryParams) => {
+export const saveApprovalDocument = async (conn, queryParams) => {
   
   const query = `
-    /* insertApprovalDocument : 결재 문서 생성 */
+    /* saveApprovalDocument : 결재 문서 생성 */
     INSERT INTO approval_document (
       company_id,
       approval_template_id,
@@ -942,15 +942,15 @@ export const insertApprovalDocument = async (conn, queryParams) => {
 
 
 /**
- * selectApprovalLineTemplate : 결재선 템플릿 목록 조회
+ * findApprovalLineTemplates : 결재선 템플릿 목록 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 {company_id, document_type}
  * @returns {Promise<Array<Object>>} : 결재선 템플릿 목록
  */
-export const selectApprovalLineTemplate = async (conn, queryParams) => {
+export const findApprovalLineTemplates = async (conn, queryParams) => {
   const query = `
-    /* selectApprovalLineTemplate : 결재선 템플릿 목록 조회 */
+    /* findApprovalLineTemplates : 결재선 템플릿 목록 조회 */
     SELECT
       alt.approval_line_template_id                        AS approval_line_template_id,
       alt.approval_template_id                             AS approval_template_id,
@@ -986,13 +986,13 @@ export const selectApprovalLineTemplate = async (conn, queryParams) => {
 
 
 /**
- * insertApprovalLines : 결재선 저장
+ * saveApprovalLines : 결재선 저장
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} approvalLinesData : 저장할 결재선 데이터 배열
  * @returns {Promise<Object>} : 저장 결과
  */
-export const insertApprovalLines = async (conn, approvalLinesData) => {
+export const saveApprovalLines = async (conn, approvalLinesData) => {
 
   // 빈 배열 체크는 Service에서 이미 했지만, 방어 코드로 한 번 더 체크
   if (!approvalLinesData || approvalLinesData.length === 0) {
@@ -1003,7 +1003,7 @@ export const insertApprovalLines = async (conn, approvalLinesData) => {
   }
   
   const query = `
-    /* insertApprovalLines : 결재선 저장 */
+    /* saveApprovalLines : 결재선 저장 */
     INSERT INTO approval_line (
       company_id,
       approval_document_id,
@@ -1058,13 +1058,13 @@ export const insertApprovalLines = async (conn, approvalLinesData) => {
 
 
 /**
- * selectCtApprovalList : CT 결재 문서 목록 조회
+ * findCtApprovals : CT 결재 문서 목록 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} params : 조회 파라미터 {company_id, search_type, date_from, date_to, ct_no, ct_content, approval_status}
  * @returns {Promise<Object[]>} : CT 결재 문서 목록
  */
-export const selectCtApprovalList = async (conn, params) => {
+export const findCtApprovals = async (conn, params) => {
 
   const queryParams = {
     company_id: params.company_id
@@ -1082,7 +1082,7 @@ export const selectCtApprovalList = async (conn, params) => {
   }
 
   let query = `
-    /* selectCtApprovalList : CT 결재 문서 목록 조회 */
+    /* findCtApprovals : CT 결재 문서 목록 조회 */
     SELECT
       ROW_NUMBER() OVER (ORDER BY ad.created_at DESC)   AS idx,
       ad.approval_document_id                           AS approval_document_id,
@@ -1173,16 +1173,16 @@ export const selectCtApprovalList = async (conn, params) => {
 
 
 /**
- * selectCtApprovalDetail : CT 결재 문서 상세 조회
+ * findCtApprovalById : CT 결재 문서 상세 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 {company_id, approval_document_id}
  * @returns 
  */
-export const selectCtApprovalDetail = async (conn, queryParams) => {
+export const findCtApprovalById = async (conn, queryParams) => {
 
   const query = `
-    /* selectCtApprovalDetail : CT 결재 문서 상세 조회 */
+    /* findCtApprovalById : CT 결재 문서 상세 조회 */
     SELECT
       ad.approval_document_id                           AS approval_document_id,
       ad.approval_status                                AS approval_status,
@@ -1228,16 +1228,16 @@ export const selectCtApprovalDetail = async (conn, queryParams) => {
 
 /* ============================== 시험 성적서 시험 항목 ============================== */
 /**
- * insertCtTestItem : 시험 항목 INSERT
+ * saveCtTestItem : 시험 항목 INSERT
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 시험 항목 객체
  * @returns {Promise<number>} : 생성된 행 수
  */
-export const insertCtTestItem = async (conn, queryParams) => {
+export const saveCtTestItem = async (conn, queryParams) => {
 
   const query = `
-    /* insertCtTestItem : 시험 항목 배열 INSERT */
+    /* saveCtTestItem : 시험 항목 배열 INSERT */
     INSERT INTO ct_test_item (
       company_id,
       ct_test_report_id,
@@ -1269,16 +1269,49 @@ export const insertCtTestItem = async (conn, queryParams) => {
 
 
 /**
- * deactivateCtTestItems : 기존 시험 항목 비활성화
+ * updateCtTestItem : 시험 항목 UPDATE
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
- * @param {*} queryParams : {company_id, ct_test_report_id}
+ * @param {*} queryParams : 시험 항목 객체 (ct_test_item_id 포함)
  * @returns {Promise<number>} : 수정된 행 수
  */
-export const deactivateCtTestItems = async (conn, queryParams) => {
+export const updateCtTestItem = async (conn, queryParams) => {
+
   const query = `
-    /* deactivateCtTestItems : 기존 시험 항목 비활성화 */
-    UPDATE 
+    /* updateCtTestItem : 시험 항목 UPDATE */
+    UPDATE
+      ct_test_item
+    SET
+      test_id = :test_id,
+      test_standard = :test_standard,
+      test_result = :test_result,
+      remark = :remark,
+      note = :note,
+      attached_image_url = :attached_image_url,
+      sort_order = :sort_order,
+      updated_by = :updated_by
+    WHERE
+      company_id = :company_id
+      AND ct_test_item_id = :ct_test_item_id
+      AND is_active = 1;
+  `;
+
+  const result = await conn.query(query, queryParams);
+  return result.affectedRows;
+};
+
+
+/**
+ * deactivateCtTestItem : 시험 항목 단일 비활성화
+ * --------------------------------------------
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} queryParams : {company_id, ct_test_item_id, deleted_by}
+ * @returns {Promise<number>} : 수정된 행 수
+ */
+export const deactivateCtTestItem = async (conn, queryParams) => {
+  const query = `
+    /* deactivateCtTestItem : 시험 항목 단일 비활성화 */
+    UPDATE
       ct_test_item
     SET
       is_active = 0,
@@ -1286,7 +1319,7 @@ export const deactivateCtTestItems = async (conn, queryParams) => {
       deleted_by = :deleted_by
     WHERE
       company_id = :company_id
-      AND ct_test_report_id = :ct_test_report_id
+      AND ct_test_item_id = :ct_test_item_id
       AND is_active = 1;
   `;
 
@@ -1297,16 +1330,16 @@ export const deactivateCtTestItems = async (conn, queryParams) => {
 
 /* ============================== 시험 성적서 주의사항 ============================== */
 /**
- * insertCtTestCaution : 주의사항 배열 INSERT
+ * saveCtTestCaution : 주의사항 배열 INSERT
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 주의사항 객체
  * @returns {Promise<number>} : 생성된 행 수
  */
-export const insertCtTestCaution = async (conn, queryParams) => {
+export const saveCtTestCaution = async (conn, queryParams) => {
 
   const query = `
-    /* insertCtTestCaution : 주의사항 배열 INSERT */
+    /* saveCtTestCaution : 주의사항 배열 INSERT */
     INSERT INTO ct_test_caution (
       company_id,
       ct_test_report_id,
@@ -1332,24 +1365,53 @@ export const insertCtTestCaution = async (conn, queryParams) => {
 
 
 /**
- * deactivateCtTestCautions : 기존 주의사항 비활성화
+ * updateCtTestCaution : 주의사항 UPDATE
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
- * @param {*} queryParams : {company_id, ct_test_report_id}
+ * @param {*} queryParams : 주의사항 객체 (ct_test_caution_id 포함)
  * @returns {Promise<number>} : 수정된 행 수
  */
-export const deactivateCtTestCautions = async (conn, queryParams) => {
+export const updateCtTestCaution = async (conn, queryParams) => {
+
   const query = `
-    /* deactivateCtTestCautions : 기존 주의사항 비활성화 */
-    UPDATE 
+    /* updateCtTestCaution : 주의사항 UPDATE */
+    UPDATE
       ct_test_caution
+    SET
+      caution_type = :caution_type,
+      section_title = :section_title,
+      section_content = :section_content,
+      sort_order = :sort_order,
+      updated_by = :updated_by
+    WHERE
+      company_id = :company_id
+      AND ct_test_caution_id = :ct_test_caution_id
+      AND is_active = 1;
+  `;
+
+  const result = await conn.query(query, queryParams);
+  return result.affectedRows;
+};
+
+
+/**
+ * deactivateCtTestCaution : 주의사항 단일 비활성화
+ * --------------------------------------------
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} queryParams : {company_id, ct_test_caution_id, deleted_by}
+ * @returns {Promise<number>} : 수정된 행 수
+ */
+export const deactivateCtTestCaution = async (conn, queryParams) => {
+  const query = `
+    /* deactivateCtTestCaution : 주의사항 단일 비활성화 */
+    UPDATE ct_test_caution
     SET
       is_active = 0,
       deleted_at = NOW(),
       deleted_by = :deleted_by
     WHERE
       company_id = :company_id
-      AND ct_test_report_id = :ct_test_report_id
+      AND ct_test_caution_id = :ct_test_caution_id
       AND is_active = 1;
   `;
 
@@ -1360,15 +1422,15 @@ export const deactivateCtTestCautions = async (conn, queryParams) => {
 
 /* ============================== 성적서 조회 ============================== */
 /**
- * selectCtTestReportByRequestId : CT 성적서 메인 정보 조회 (ct_test_report + ct_request 조인)
+ * findCtTestReportByRequestId : CT 성적서 메인 정보 조회 (ct_test_report + ct_request 조인)
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} params : {company_id, ct_request_id}
  * @returns {Promise<Object>} : 성적서 메인 정보
  */
-export const selectCtTestReportByRequestId = async (conn, params) => {
+export const findCtTestReportByRequestId = async (conn, params) => {
   const query = `
-    /* selectCtTestReportByRequestId : CT 성적서 메인 정보 조회 */
+    /* findCtTestReportByRequestId : CT 성적서 메인 정보 조회 */
     SELECT
 
       /* CT 의뢰 정보 */
@@ -1469,34 +1531,38 @@ export const selectCtTestReportByRequestId = async (conn, params) => {
 
 
 /**
- * selectCtTestItemsByReportId : CT 시험 항목 목록 조회
+ * findCtTestItemsByReportId : CT 시험 항목 목록 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} params : {company_id, ct_test_report_id}
  * @returns {Promise<Array<Object>>} : 시험 항목 목록
  */
-export const selectCtTestItemsByReportId = async (conn, params) => {
+export const findCtTestItemsByReportId = async (conn, params) => {
   const query = `
-    /* selectCtTestItemsByReportId : CT 시험 항목 목록 조회 */
+    /* findCtTestItemsByReportId : CT 시험 항목 목록 조회 */
     SELECT
-      cti.ct_test_item_id     AS ct_test_item_id,
-      cti.ct_test_report_id   AS ct_test_report_id,
-      cti.test_id             AS test_id,
-      ts.test_standard_code   AS test_standard_code,
-      ts.test_standard_name   AS test_standard_name,
-      ts.test_guide           AS test_guide,
-      ts.result_type          AS result_type,
-      cti.test_result         AS test_result,
-      cti.remark              AS remark,
-      cti.note                AS note,
-      cti.attached_image_url  AS attached_image_url,
-      cti.sort_order          AS sort_order
+      cti.ct_test_item_id         AS ct_test_item_id,
+      cti.ct_test_report_id       AS ct_test_report_id,
+      cti.test_id                 AS test_id,
+      ts.test_standard_code       AS test_standard_code,
+      ts.test_standard_name       AS test_standard_name,
+      ts.test_guide               AS test_guide,
+      rto.result_type_option_id   AS result_type_option_id,
+      cti.test_result             AS test_result,
+      cti.remark                  AS remark,
+      cti.note                    AS note,
+      cti.attached_image_url      AS attached_image_url,
+      cti.sort_order              AS sort_order
     FROM
       ct_test_item AS cti
     LEFT JOIN
       test_standard AS ts
       ON cti.test_id = ts.test_standard_id
       AND cti.company_id = ts.company_id
+    LEFT JOIN
+      result_type_option AS rto
+      ON ts.result_type_option_id = rto.result_type_option_id
+      AND ts.company_id = rto.company_id
     WHERE
       cti.company_id = :company_id
       AND cti.ct_test_report_id = :ct_test_report_id
@@ -1512,15 +1578,15 @@ export const selectCtTestItemsByReportId = async (conn, params) => {
 
 
 /**
- * selectCtTestCautionsByReportId : CT 주의사항 목록 조회
+ * findCtTestCautionsByReportId : CT 주의사항 목록 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} params : {company_id, ct_test_report_id}
  * @returns {Promise<Array<Object>>} : 주의사항 목록
  */
-export const selectCtTestCautionsByReportId = async (conn, params) => {
+export const findCtTestCautionsByReportId = async (conn, params) => {
   const query = `
-    /* selectCtTestCautionsByReportId : CT 주의사항 목록 조회 */
+    /* findCtTestCautionsByReportId : CT 주의사항 목록 조회 */
     SELECT
       ctc.ct_test_caution_id  AS ct_test_caution_id,
       ctc.ct_test_report_id   AS ct_test_report_id,
@@ -1546,15 +1612,15 @@ export const selectCtTestCautionsByReportId = async (conn, params) => {
 
 
 /**
- * selectCtTestReportAttachmentsByReportId : CT 성적서 첨부파일 목록 조회
+ * findCtTestReportAttachmentsByReportId : CT 성적서 첨부파일 목록 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} params : {company_id, ct_test_report_id}
  * @returns {Promise<Array<Object>>} : 첨부파일 목록
  */
-export const selectCtTestReportAttachmentsByReportId = async (conn, params) => {
+export const findCtTestReportAttachmentsByReportId = async (conn, params) => {
   const query = `
-    /* selectCtTestReportAttachmentsByReportId : CT 성적서 첨부파일 목록 조회 */
+    /* findCtTestReportAttachmentsByReportId : CT 성적서 첨부파일 목록 조회 */
     SELECT
       ctra.ct_test_report_attachment_id  AS ct_test_report_attachment_id,
       ctra.ct_test_report_id             AS ct_test_report_id,
@@ -1584,130 +1650,13 @@ export const selectCtTestReportAttachmentsByReportId = async (conn, params) => {
 
 
 /**
- * insertCtTestReportAttachments : CT 성적서 첨부파일 일괄 삽입
- * --------------------------------------------
- * @param {*} conn : 데이터베이스 연결 객체
- * @param {*} attachments : 첨부파일 배열 [{company_id, ct_test_report_id, reference_id, ...}, ...]
- * @returns {Promise<number>} : 삽입된 행 수
- */
-// export const insertCtTestReportAttachments = async (conn, attachments) => {
-//   if (!attachments || attachments.length === 0) return 0;
-
-//   const valuePlaceholders = attachments.map((_, i) => 
-//     `(:company_id_${i},
-//       :ct_test_report_id_${i},
-//       :reference_id_${i},
-//       :caution_type_${i}, 
-//       :file_url_${i},
-//       :file_name_${i},
-//       :file_size_${i},
-//       :file_mime_type_${i}, 
-//       :file_category_${i},
-//       :sort_order_${i},
-//       :created_by_${i})`
-//   ).join(', ');
-
-//   const queryParams = {};
-//   attachments.forEach((att, i) => {
-//     queryParams[`company_id_${i}`] = att.company_id;
-//     queryParams[`ct_test_report_id_${i}`] = att.ct_test_report_id;
-//     queryParams[`reference_id_${i}`] = att.reference_id || null;
-//     queryParams[`caution_type_${i}`] = att.caution_type || null;
-//     queryParams[`file_url_${i}`] = att.file_url;
-//     queryParams[`file_name_${i}`] = att.file_name;
-//     queryParams[`file_size_${i}`] = att.file_size || null;
-//     queryParams[`file_mime_type_${i}`] = att.file_mime_type || null;
-//     queryParams[`file_category_${i}`] = att.file_category;
-//     queryParams[`sort_order_${i}`] = att.sort_order || 1;
-//     queryParams[`created_by_${i}`] = att.created_by || null;
-//   });
-
-//   const query = `
-//     /* insertCtTestReportAttachments : CT 성적서 첨부파일 일괄 삽입 */
-//     INSERT INTO ct_test_report_attachment (
-//       company_id, 
-//       ct_test_report_id, 
-//       reference_id, 
-//       caution_type,
-//       file_url, 
-//       file_name, 
-//       file_size, 
-//       file_mime_type,
-//       file_category, 
-//       sort_order, 
-//       created_by
-//     ) VALUES ${valuePlaceholders}
-//   `;
-
-//   const result = await conn.query(query, queryParams);
-//   return result.affectedRows;
-// };
-
-
-/**
- * deleteCtTestReportAttachment : CT 성적서 첨부파일 삭제 (소프트 삭제)
- * --------------------------------------------
- * @param {*} conn : 데이터베이스 연결 객체
- * @param {*} params : {company_id, ct_test_report_attachment_id, deleted_by}
- * @returns {Promise<number>} : 삭제된 행 수
- */
-export const deleteCtTestReportAttachment = async (conn, params) => {
-  const query = `
-    /* deleteCtTestReportAttachment : CT 성적서 첨부파일 삭제 */
-    UPDATE 
-      ct_test_report_attachment
-    SET
-      is_active = 0,
-      deleted_at = NOW(),
-      deleted_by = :deleted_by
-    WHERE
-      company_id = :company_id
-      AND ct_test_report_attachment_id = :ct_test_report_attachment_id
-      AND is_active = 1
-  `;
-
-  const result = await conn.query(query, params);
-  return result.affectedRows;
-};
-
-
-/**
- * deleteCtTestReportAttachmentsByReference : 참조 ID로 첨부파일 일괄 삭제
- * --------------------------------------------
- * @param {*} conn : 데이터베이스 연결 객체
- * @param {*} params : {company_id, ct_test_report_id, file_category, reference_id, deleted_by}
- * @returns {Promise<number>} : 삭제된 행 수
- */
-export const deleteCtTestReportAttachmentsByReference = async (conn, params) => {
-  const query = `
-    /* deleteCtTestReportAttachmentsByReference : 참조 ID로 첨부파일 일괄 삭제 */
-    UPDATE 
-      ct_test_report_attachment
-    SET
-      is_active = 0,
-      deleted_at = NOW(),
-      deleted_by = :deleted_by
-    WHERE
-      company_id = :company_id
-      AND ct_test_report_id = :ct_test_report_id
-      AND file_category = :file_category
-      AND reference_id = :reference_id
-      AND is_active = 1
-  `;
-
-  const result = await conn.query(query, params);
-  return result.affectedRows;
-};
-
-
-/**
- * selectTestReportHistory : 이전 성적서 목록 조회
+ * findTestReportHistorys : 이전 성적서 목록 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} params : {company_id, search_type, search_from, search_to, ct_no, search_content}
  * @returns {Promise<Array>} : 성적서 목록
  */
-export const selectTestReportHistory = async (conn, params) => {
+export const findTestReportHistorys = async (conn, params) => {
 
   let dateColumn = ''; // 기본값: REQ이며, CT의뢰일자로 조회.
   
@@ -1720,7 +1669,7 @@ export const selectTestReportHistory = async (conn, params) => {
   };
 
   let query = `
-    /* selectTestReportHistory : 이전 성적서 목록 조회 */
+    /* findTestReportHistorys : 이전 성적서 목록 조회 */
     SELECT
       tr.ct_test_report_id                          AS ct_test_report_id,
       cr.ct_no                                      AS ct_no,
@@ -1788,16 +1737,16 @@ export const selectTestReportHistory = async (conn, params) => {
 
 
 /**
- * selectTestReportTestItems : 특정 성적서의 시험 항목 조회
+ * findTestReportTestItems : 특정 성적서의 시험 항목 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : { company_id, ct_test_report_id }
  * @returns {Promise<Array>} : 시험 항목 목록
  */
-export const selectTestReportTestItems = async (conn, queryParams) => {
+export const findTestReportTestItems = async (conn, queryParams) => {
 
   const query = `
-    /* selectTestReportTestItems : 특정 성적서의 시험 항목 조회 */
+    /* findTestReportTestItems : 특정 성적서의 시험 항목 조회 */
     SELECT
       ti.ct_test_item_id,
       ti.ct_test_report_id,
@@ -1805,7 +1754,7 @@ export const selectTestReportTestItems = async (conn, queryParams) => {
       ts.test_standard_code,
       ts.test_standard_name,
       ts.test_guide,
-      ts.result_type
+      ts.result_type_option_id
     FROM
       ct_test_item AS ti
     LEFT JOIN
@@ -1827,13 +1776,13 @@ export const selectTestReportTestItems = async (conn, queryParams) => {
 
 
 /**
- * selectRemarkHistory : 시험 종합 의견 이력 조회
+ * findRemarkHistorys : 시험 종합 의견 이력 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : {company_id, search_type, search_from, search_to, material_large_category_id, search_content}
  * @returns {Promise<Array>} : 종합 의견 목록
  */
-export const selectRemarkHistory = async (conn, params) => {
+export const findRemarkHistorys = async (conn, params) => {
 
   let dateColumn = ''; // 기본값: REQ이며, CT의뢰일자로 조회.
   
@@ -1846,7 +1795,7 @@ export const selectRemarkHistory = async (conn, params) => {
   };
 
   let query = `
-    /* selectRemarkHistory : 시험 종합 의견 이력 조회 */
+    /* findRemarkHistorys : 시험 종합 의견 이력 조회 */
     SELECT
       ti.ct_test_item_id,
       ti.ct_test_report_id,
@@ -1912,40 +1861,34 @@ export const selectRemarkHistory = async (conn, params) => {
 
 /* ============================== 시험 기준 ============================== */
 /**
- * selectTestStandardList : 시험 기준 목록 조회 (전체)
+ * findResultTypeOptions : 결과 유형 옵션 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
- * @param {*} params : {company_id, search_keyword}
- * @returns {Promise<Array>} : 시험 기준 목록
+ * @param {*} queryParams : {company_id}
+ * @returns {Promise<Array>} : 결과 유형 옵션 목록
  */
-export const selectTestStandardList = async (conn, queryParams) => {
+export const findResultTypeOptions = async (conn, queryParams) => {
 
-  // 전체 목록 조회 쿼리
   const query = `
-    /* selectTestStandardList : 시험 기준 목록 조회 */
+    /* findResultTypeOptions : 결과 유형 옵션 조회 */
     SELECT
-      ts.test_standard_id,
-      ts.test_standard_code,
-      ts.test_standard_name,
-      ts.test_guide,
-      ts.result_type,
-      ts.material_large_category_id,
-      mlc.material_large_category_name,
-      ts.sort_order,
-      ts.created_at,
-      ts.updated_at
+      rto.result_type_option_id     AS result_type_option_id,
+      rto.result_type_code          AS result_type_code,
+      rto.result_type_name          AS result_type_name,
+      rto.result_type_description   AS result_type_description,
+      rto.requires_limits           AS requires_limits,
+      rto.requires_target           AS requires_target,
+      rto.requires_tolerance        AS requires_tolerance,
+      rto.input_type                AS input_type,
+      rto.sort_order                AS sort_order
     FROM
-      test_standard AS ts
-    LEFT JOIN
-      material_large_category AS mlc
-      ON ts.company_id = mlc.company_id
-      AND ts.material_large_category_id = mlc.material_large_category_id
+      result_type_option AS rto
     WHERE
-      ts.company_id = :company_id
-      AND ts.is_active = 1
+      company_id = :company_id
+      AND is_active = 1
     ORDER BY
-      ts.sort_order,
-      ts.test_standard_id;
+      sort_order,
+      result_type_option_id;
   `;
 
   const result = await conn.query(query, queryParams);
@@ -1953,18 +1896,92 @@ export const selectTestStandardList = async (conn, queryParams) => {
 };
 
 
+/**
+ * findTestStandards : 시험 기준 목록 조회 (전체)
+ * --------------------------------------------
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} params : {company_id, search_keyword}
+ * @returns {Promise<Array>} : 시험 기준 목록
+ */
+export const findTestStandards = async (conn, queryParams) => {
+
+  let query= '';
+
+  // 전체 목록 조회 쿼리
+  query += `
+    /* findTestStandards : 시험 기준 목록 조회 */
+    SELECT
+      ts.test_standard_id               AS test_standard_id,
+      ts.test_standard_code             AS test_standard_code,
+      ts.test_standard_name             AS test_standard_name,
+      ts.test_guide                     AS test_guide,
+      ts.material_large_category_id     AS material_large_category_id,
+      mlc.material_large_category_name  AS material_large_category_name,
+      TRIM(TRAILING '.' FROM TRIM(TRAILING '0' FROM ts.upper_limit)) AS upper_limit,
+      TRIM(TRAILING '.' FROM TRIM(TRAILING '0' FROM ts.lower_limit)) AS lower_limit,
+      ts.tolerance_percent              AS tolerance_percent,
+      rto.result_type_option_id         AS result_type_option_id,
+      ts.sort_order                     AS sort_order
+    FROM
+      test_standard AS ts
+    LEFT JOIN
+      material_large_category AS mlc
+      ON ts.company_id = mlc.company_id
+      AND ts.material_large_category_id = mlc.material_large_category_id
+    LEFT JOIN
+      result_type_option AS rto
+      ON ts.company_id = rto.company_id
+      AND ts.result_type_option_id = rto.result_type_option_id
+    WHERE
+      ts.company_id = :company_id
+      AND ts.is_active = 1
+  `;
+
+  if (queryParams.material_large_category_name) {
+    query += ` AND mlc.material_large_category_name LIKE :material_large_category_name`;
+    queryParams.material_large_category_name = utils.sanitizeSearchPattern(queryParams.material_large_category_name);
+  }
+
+  if (queryParams.test_standard_code) {
+    query += ` AND ts.test_standard_code LIKE :test_standard_code`;
+    queryParams.test_standard_code = utils.sanitizeSearchPattern(queryParams.test_standard_code);
+  }
+
+  if (queryParams.test_standard_name) {
+    query += ` AND ts.test_standard_name LIKE :test_standard_name`;
+    queryParams.test_standard_name = utils.sanitizeSearchPattern(queryParams.test_standard_name);
+  }
+
+  if (queryParams.search_keyword) {
+    query += ` AND (ts.test_standard_name LIKE :search_keyword
+                OR ts.test_standard_code LIKE :search_keyword
+                OR ts.test_guide LIKE :search_keyword)`;
+    queryParams.search_keyword = utils.sanitizeSearchPattern(queryParams.search_keyword);
+  }
+
+  query += `
+    ORDER BY
+      ts.sort_order,
+      ts.test_standard_id;
+  `;
+console.error(utils.debugQuery(query, queryParams));
+  const result = await conn.query(query, queryParams);
+  return result;
+};
+
+
 /* ============================== 파일 첨부 ============================== */
 /**
- * insertCtTestReportAttachment : 성적서 첨부파일 INSERT
+ * saveCtTestReportAttachment : 성적서 첨부파일 INSERT
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 첨부파일 객체
  * @returns {Promise<number>} : 생성된 행 수
  */
-export const insertCtTestReportAttachment = async (conn, queryParams) => {
+export const saveCtTestReportAttachment = async (conn, queryParams) => {
 
   const query = `
-    /* insertCtTestReportAttachment : 성적서 첨부파일 INSERT */
+    /* saveCtTestReportAttachment : 성적서 첨부파일 INSERT */
     INSERT INTO ct_test_report_attachment (
       company_id,
       ct_test_report_id,
@@ -1998,13 +2015,13 @@ export const insertCtTestReportAttachment = async (conn, queryParams) => {
 
 
 /**
- * insertCtTestReportAttachments : 성적서 첨부파일 배열 INSERT
+ * saveCtTestReportAttachments : 성적서 첨부파일 배열 INSERT
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} attachmentsParam : 첨부파일 배열
  * @returns {Promise<number>} : 생성된 행 수
  */
-export const insertCtTestReportAttachments = async (conn, attachmentsParam) => {
+export const saveCtTestReportAttachments = async (conn, attachmentsParam) => {
 
   if (!attachmentsParam || attachmentsParam.length === 0) {
     return 0;
@@ -2040,7 +2057,7 @@ export const insertCtTestReportAttachments = async (conn, attachmentsParam) => {
   }).join(', ');
 
   const query = `
-    /* insertCtTestReportAttachments : 성적서 첨부파일 배열 INSERT */
+    /* saveCtTestReportAttachments : 성적서 첨부파일 배열 INSERT */
     INSERT INTO ct_test_report_attachment (
       company_id,
       ct_test_report_id,

@@ -103,7 +103,7 @@ export default function UserManage() {
     const fetchRoleList = async () => {
         try {
             const params = { company_id: companyId };
-            const response = await axios.get("/api/ltms/auth/role/list", { params });
+            const response = await axios.get("/api/ltms/auth/roles", { params });
             const roleList = response.data.data.result || [];
             setRoleList(roleList);
         } catch (error) {
@@ -127,11 +127,6 @@ export default function UserManage() {
      * 저장
      */
     const save = async () => {
-        // 권한 체크
-        if (!hasModulePermission('setting_user', 'update')) {
-            alert('사용자 정보를 수정할 권한이 없습니다.');
-            return;
-        }
 
         if (!confirm("변경사항을 저장하시겠습니까?")) return;
 

@@ -644,7 +644,7 @@ export default function CT_Request_Approval() {
       const params = Utils.cleanParams(searchForm);
       
       // 응답 객체
-      const res = await axios.get("/api/ltms/ct/approval/read", { params });
+      const res = await axios.get("/api/ltms/ct/approvals", { params });
       const resultData = res.data.data.result || [];
 
       setApprovals(resultData);
@@ -690,7 +690,7 @@ export default function CT_Request_Approval() {
       };
       
       // 응답 객체
-      const res = await axios.get("/api/ltms/ct/approval/read", { params });
+      const res = await axios.get("/api/ltms/ct/approvals", { params });
       const resultData = res.data.data.result || [];
 
       setApprovals(resultData);

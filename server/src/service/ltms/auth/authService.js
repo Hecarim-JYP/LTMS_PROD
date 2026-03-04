@@ -7,8 +7,10 @@
  */
 
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { getPool } from '../../../repository/connection.js';
 import * as utils from '../../../common/utils.js';
+import * as erpService from '../../erp/erp_service.js';
 import * as authQuery from '../../../repository/sql/ltms/auth/authQuery.js';
 
 // const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here_change_in_production';
@@ -63,14 +65,14 @@ const validateUserStatus = (userInfo) => {
  * @throws {Error} : 비밀번호 불일치 시 에러
  */
 const handlePasswordValidation = async (conn, queryParams, userQueryParams, storedPassword) => {
-  const isValidPassword = await authQuery.verifyPassword(queryParams, storedPassword);
+  const isValidPassword = await verifyPassword(queryParams, storedPassword);
 
   if (!isValidPassword) {
     // 로그인 실패 횟수 증가
     await authQuery.incrementLoginFailCount(conn, userQueryParams);
 
     // 현재 실패 횟수 조회를 위해 사용자 정보 다시 조회
-    const updatedUserInfo = await authQuery.selectUserInfoByUsername(conn, queryParams);
+    const updatedUserInfo = await authQuery.findUserInfoByUsername(conn, queryParams);
     const failCount = updatedUserInfo.failed_login_attempts || 0;
     const maxFailCount = 5; // 최대 허용 실패 횟수
 
@@ -84,6 +86,32 @@ const handlePasswordValidation = async (conn, queryParams, userQueryParams, stor
     }
 
     throw new Error(`잘못된 비밀번호입니다.\n(실패횟수 : ${failCount} / ${maxFailCount})`);
+  }
+};
+
+
+/**
+ * verifyPassword : 비밀번호 검증 (SHA-512)
+ * --------------------------------------------
+ * @param {string} queryParams : 로그인 파라미터 (password 포함)
+ * @param {string} storedPassword : 저장된 비밀번호 (SHA-512 해시)
+ * @returns {Promise<boolean>} : 일치 여부
+ */
+const verifyPassword = async (queryParams, storedPassword) => {
+
+  const { password } = queryParams;
+
+  try {
+    // 입력받은 비밀번호를 SHA-512로 해싱
+    const hashedPassword = crypto
+      .createHash('sha512')
+      .update(password)
+      .digest('hex');
+    
+    // 해싱된 값과 DB에 저장된 값 비교
+    return hashedPassword === storedPassword;
+  } catch (err) {
+    throw err;
   }
 };
 
@@ -135,11 +163,32 @@ const parseRolesAndPermissions = (permissionsData, userInfo) => {
   };
 };
 
+
+/**
+ * registerUserFromERP : ERP에서 사용자 정보 조회 후 신규 등록
+ * @param {*} conn : DB 연결 객체
+ * @param {*} queryParams : 사용자 등록용 파라미터 (company_id, user_name)
+ * @param {*} erpUserInfo : ERP에서 조회한 사용자 정보
+ */
+const registerUserFromERP = async (conn, queryParams, erpUserInfo) => {
+  const newUserParams = {
+    company_id: queryParams.company_id,
+    employee_number: queryParams.user_name,
+    user_full_name: erpUserInfo.result.UserName
+  };
+
+  const isRegistered = await authQuery.checkUserExists(conn, newUserParams);
+
+  if(!isRegistered) {
+    await authQuery.registerUser(conn, newUserParams);
+  }
+};
+
 /* ============================== 로그인 ============================== */
 /**
  * authenticateUser : 사용자 인증 및 로그인 정보 조회
  * --------------------------------------------
- * @param {*} params : 조회 파라مي터 { loginId, password, company_id }
+ * @param {*} params : 조회 파라미터 { loginId, password, company_id }
  * @returns : { userInfo, role, permissions, customSettings, accessibleMenus } * 
  * 새로운 권한 체계:
  *   - permissions: 메뉴 접근 권한(permission_type='menu') + 동작 권한(permission_type='action')
@@ -171,14 +220,24 @@ export const authenticateUser = async (params) => {
     // ========================================
     // 1단계: 사용자 정보 조회 및 검증
     // ========================================
-    const userInfo = await authQuery.selectUserInfoByUsername(conn, queryParams);
+    const isAuthenticatedUserInfo = await erpService.authenticateUser(queryParams);
+    const storedPassword = isAuthenticatedUserInfo.result.LoginPwd; // ERP에서 조회한 인증 결과 객체 
+    let userInfo;
 
     // 사용자 존재 여부 검증
-    utils.checkRequiredValue(userInfo, 'user_info');
+    if(isAuthenticatedUserInfo === null || isAuthenticatedUserInfo === undefined) {
+      throw new Error('사용자 정보를 ERP에서 조회할 수 없습니다. 로그인 정보를 확인하세요.');
+    }
+
+    // ERP에 사용자 정보가 없으면 신규 등록 (초기 비밀번호는 ERP에서 제공된 값 사용)
+    await registerUserFromERP(conn, queryParams, isAuthenticatedUserInfo);
+
+    userInfo = await authQuery.findUserInfoByUsername(conn, queryParams);
 
     const userQueryParams = {
       user_id: utils.toStringOrEmpty(userInfo.user_id),
       company_id: utils.toNumberOrNull(userInfo.company_id),
+      password: utils.toStringOrEmpty(queryParams.password)
     };
 
     // 사용자 상태 검증 (헬퍼 함수 사용)
@@ -187,7 +246,7 @@ export const authenticateUser = async (params) => {
     // ========================================
     // 2단계: 비밀번호 검증 및 로그인 실패 처리
     // ========================================
-    await handlePasswordValidation(conn, queryParams, userQueryParams, userInfo.password);
+    await handlePasswordValidation(conn, queryParams, userQueryParams, storedPassword);
 
     // 로그인 성공 시 실패 횟수 초기화
     await authQuery.resetLoginFailCount(conn, userQueryParams);
@@ -197,11 +256,11 @@ export const authenticateUser = async (params) => {
     // ========================================
     const [permissionsData, customSettings, accessibleMenus] = await Promise.all([
       // 사용자 역할 및 권한 조회
-      authQuery.selectUserPermissionsByUserId(conn, userQueryParams),
+      authQuery.findUserPermissionsByUserId(conn, userQueryParams),
       // 사용자 커스텀 설정 조회
-      authQuery.selectUserCustomSettings(conn, userQueryParams),
+      authQuery.findUserCustomSettings(conn, userQueryParams),
       // 접근 가능한 메뉴 조회 (단일 역할 기반)
-      authQuery.selectAccessibleMenusByRole(conn, {
+      authQuery.findAccessibleMenusByRole(conn, {
         company_id: userQueryParams.company_id,
         role_id: userInfo.role_id
       })
@@ -236,12 +295,12 @@ export const authenticateUser = async (params) => {
 
 /* ============================== 메뉴 ============================== */
 /**
- * getMenuList : 메뉴 목록 조회
+ * getMenus : 메뉴 목록 조회
  * --------------------------------------------
  * @param {*} params : { company_id }
  * @returns : 메뉴 목록 배열
  */
-export const getMenuList = async (params) => {
+export const getMenus = async (params) => {
 
   // 필수 파라미터 검증
   utils.checkRequiredParams(params, ['company_id']);
@@ -255,7 +314,7 @@ export const getMenuList = async (params) => {
 
   try {
     conn = await getPool().getConnection();
-    const menuList = await authQuery.selectMenuList(conn, queryParams);
+    const menuList = await authQuery.findMenus(conn, queryParams);
 
     return {
       result: menuList
@@ -317,7 +376,7 @@ export const createParentMenu = async (params) => {
  */
 export const updateParentMenu = async (params) => {
 
-  utils.checkRequiredParams(params, ['company_id', 'menu_id', 'menu_code', 'menu_name', 'is_active', 'updated_by']);
+  utils.checkRequiredParams(params, ['company_id', 'menu_id', 'menu_code', 'menu_name', 'is_active', 'assigned_by']);
 
   const queryParams = {
     company_id: utils.toNumberOrNull(params.company_id),
@@ -640,7 +699,7 @@ export const getUsers = async (params) => {
   
   try {
     conn = await getPool().getConnection();
-    const userList = await authQuery.selectUserList(conn, queryParams);
+    const userList = await authQuery.findUsers(conn, queryParams);
     
     return { 
       result: userList
@@ -706,6 +765,12 @@ export const saveUserInformation = async (params) => {
 
 
 /* ============================== 권한 ============================== */
+/**
+ * getPermissionByRoleId : 역할 ID로 권한 정보 조회
+ * --------------------------------------------
+ * @param {*} params : 조회 파라미터 { company_id, role_id }
+ * @returns : 권한 정보 배열
+ */
 export const getPermissionByRoleId = async (params) => {
 
   // 필수 파라미터 검증
@@ -721,7 +786,7 @@ export const getPermissionByRoleId = async (params) => {
   
   try {
     conn = await getPool().getConnection();
-    const result = await authQuery.selectPermissionByRoleId(conn, queryParams);
+    const result = await authQuery.findPermissionsByRoleId(conn, queryParams);
 
     const permissionList = result.map(permission => ({
       idx: parseInt(permission.idx, 10), // 10진수 정수로 변환
@@ -752,12 +817,12 @@ export const getPermissionByRoleId = async (params) => {
 
 
 /**
- * getRoleList : 역할 목록 조회
+ * getRoles : 역할 목록 조회
  * --------------------------------------------
  * @param {*} params : 조회 파라미터 (company_id)
  * @returns : 역할 목록 배열
  */
-export const getRoleList = async (params) => {
+export const getRoles = async (params) => {
 
   utils.checkRequiredParams(params, ['company_id']);
 
@@ -771,7 +836,7 @@ export const getRoleList = async (params) => {
   try {
     conn = await getPool().getConnection();
 
-    const result = await authQuery.selectRoleList(conn, queryParams);
+    const result = await authQuery.findRoles(conn, queryParams);
     
     const roleList = result.map(role => ({
       idx: parseInt(role.idx, 10), // 10진수 정수로 변환
@@ -958,12 +1023,12 @@ export const assignPermissionsToRole = async (params) => {
 
 
 /**
- * getPermissionList : 권한 목록 조회
+ * getPermissions : 권한 목록 조회
  * --------------------------------------------
  * @param {*} params : 조회 파라미터 (company_id, is_setting)
  * @returns 
  */
-export const getPermissionList = async (params) => {
+export const getPermissions = async (params) => {
 
   utils.checkRequiredParams(params, ['company_id']);
 
@@ -977,7 +1042,7 @@ export const getPermissionList = async (params) => {
   try {
     conn = await getPool().getConnection();
 
-    const result = await authQuery.selectPermissionList(conn, queryParams);
+    const result = await authQuery.findPermissions(conn, queryParams);
     
     const permissionList = result.map(permission => ({
       idx: parseInt(permission.idx, 10), // 10진수 정수로 변환

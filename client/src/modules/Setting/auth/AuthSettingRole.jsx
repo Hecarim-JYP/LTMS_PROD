@@ -115,7 +115,7 @@ export default function AuthSettingRole() {
                 is_setting: 1
             };
 
-            const response = await axios.get("/api/ltms/auth/role/list", { params });
+            const response = await axios.get("/api/ltms/auth/roles", { params });
             const roles = response.data.data.result || [];
             setRoleList(roles);
         } catch (error) {
@@ -140,7 +140,7 @@ export default function AuthSettingRole() {
                 is_setting: 1
             };
 
-            const response = await axios.get("/api/ltms/auth/role/permission", { params });
+            const response = await axios.get("/api/ltms/auth/permissions/role", { params });
             const permissions = response.data.data.result || [];
             setRolePermissionList(permissions);
         } catch (error) {
@@ -270,7 +270,7 @@ export default function AuthSettingRole() {
                 is_setting: 1
             };
 
-            const response = await axios.get("/api/ltms/auth/permission", { params });
+            const response = await axios.get("/api/ltms/auth/permissions", { params });
             const allPermissions = response.data.data.result || [];
             
             setAllPermissionList(allPermissions);

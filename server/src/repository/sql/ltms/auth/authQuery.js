@@ -5,22 +5,21 @@
  * 수정일자 : 
  * 수정사항 : 
  */
-
-// import bcrypt from 'bcrypt';
+import * as utils from '../../../../common/utils.js';
 
 
 /* ============================== 로그인 ============================== */
 /**
- * selectUserInfoByUsername : 사용자명으로 사용자 기본 정보 조회 (등급, 부서 포함)
+ * findUserInfoByUsername : 사용자명으로 사용자 기본 정보 조회 (등급, 부서 포함)
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 { user_name, company_id }
  * @returns : 사용자 정보 객체
  */
-export const selectUserInfoByUsername = async (conn, queryParams) => {
+export const findUserInfoByUsername = async (conn, queryParams) => {
 
   const query = `
-    /* 사용자 기본 정보 조회 */
+    /* findUserInfoByUsername: 사용자 기본 정보 조회 */
     SELECT 
       u.user_id                 AS user_id,
       u.company_id              AS company_id,
@@ -71,34 +70,11 @@ export const selectUserInfoByUsername = async (conn, queryParams) => {
       AND u.role_id = r.role_id
     WHERE 
       u.company_id = :company_id
-      AND (u.user_name = :user_name OR u.email = :user_name OR u.employee_number = :user_name OR u.user_full_name = :user_name)
+      AND u.employee_number = :user_name
   `;
 
   const result = await conn.query(query, queryParams);
   return result.length > 0 ? result[0] : null;
-};
-
-
-/**
- * verifyPassword : 비밀번호 검증
- * --------------------------------------------
- * @param {string} queryParams : 로그인 파라미터 (password 포함)
- * @param {string} storedPassword : 저장된 비밀번호 (현재는 평문, 추후 해시)
- * @returns {Promise<boolean>} : 일치 여부
- */
-export const verifyPassword = async (queryParams, storedPassword) => {
-
-  const { password } = queryParams;
-
-  try {
-    // 현재는 평문 비교 (해시 미적용)
-    return password === storedPassword;
-    // TODO: 비밀번호 해시 적용 시 아래 코드로 변경
-    // return await bcrypt.compare(plainPassword, storedPassword);
-    
-  } catch (err) {
-    throw err;
-  }
 };
 
 
@@ -112,7 +88,7 @@ export const verifyPassword = async (queryParams, storedPassword) => {
 export const incrementLoginFailCount = async (conn, queryParams) => {
 
   const query = `
-    /* 로그인 실패 횟수 증가 */
+    /* incrementLoginFailCount: 로그인 실패 횟수 증가 */
     UPDATE
       \`user\`
     SET
@@ -138,7 +114,7 @@ export const incrementLoginFailCount = async (conn, queryParams) => {
 export const lockUserAccount = async (conn, queryParams) => {
 
   const query = `
-    /* 계정 잠금 처리 */
+    /* lockUserAccount: 계정 잠금 처리 */
     UPDATE
       \`user\`
     SET
@@ -166,7 +142,7 @@ export const lockUserAccount = async (conn, queryParams) => {
 export const resetLoginFailCount = async (conn, queryParams) => {
 
   const query = `
-    /* 로그인 실패 횟수 초기화 */
+    /* resetLoginFailCount: 로그인 실패 횟수 초기화 */
     UPDATE
       \`user\`
     SET
@@ -184,7 +160,7 @@ export const resetLoginFailCount = async (conn, queryParams) => {
 
 
 /**
- * selectUserPermissionsByUserId : 사용자 ID로 권한 정보 조회 (메뉴 접근 권한 + 동작 권한)
+ * findUserPermissionsByUserId : 사용자 ID로 권한 정보 조회 (메뉴 접근 권한 + 동작 권한)
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 { user_id, company_id }
@@ -194,7 +170,7 @@ export const resetLoginFailCount = async (conn, queryParams) => {
  *   - permission_type='menu': 메뉴 접근 권한 (menu_permission 테이블 사용)
  *   - permission_type='action': 동작 권한 (role_permission 테이블 사용)
  */
-export const selectUserPermissionsByUserId = async (conn, queryParams) => {
+export const findUserPermissionsByUserId = async (conn, queryParams) => {
 
   const query = `
     /* 동작 권한 조회 (role_permission → permission_type='action') */
@@ -243,7 +219,7 @@ export const selectUserPermissionsByUserId = async (conn, queryParams) => {
     
     UNION ALL
     
-    /* 메뉴 접근 권한 조회 (menu_permission → permission_type='menu') */
+    /* findUserPermissionsByUserId: 메뉴 접근 권한 조회 (menu_permission → permission_type='menu') */
     SELECT DISTINCT
       r.role_id               AS role_id,
       r.role_code             AS role_code,
@@ -301,18 +277,69 @@ export const selectUserPermissionsByUserId = async (conn, queryParams) => {
 };
 
 
+/**
+ * checkUserExists : 사용자 존재 여부 확인
+ * --------------------------------------------
+ * @param {*} conn : DB 연결 객체
+ * @param {*} queryParams : 조회 파라미터 { company_id, user_name }
+ * @returns {Promise<boolean>} : 존재 여부
+ */
+export const checkUserExists = async (conn, queryParams) => {
+
+  const query = `
+    /* checkUserExists: 사용자 존재 여부 확인 */
+    SELECT
+      COUNT(*) AS user_count
+    FROM
+      \`user\`
+    WHERE
+      company_id = :company_id
+      AND employee_number = :employee_number
+  `;
+
+  const result = await conn.query(query, queryParams);
+  return result[0].user_count > 0 ? true : false;
+};
+
+
 /* ============================== 사용자 ============================== */
 /**
- * selectUserCustomSettings : 사용자 커스텀 설정 조회
+ * registerUser : ERP에서 사용자 정보 조회 후 신규 사용자 등록 (권한은 게스트 등급으로 생성됨)
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} queryParams : 등록 파라미터 { company_id, user_name }
+ */
+export const registerUser = async (conn, queryParams) => {
+  const query = `
+    /* registerUser: ERP에서 사용자 정보 조회 후 신규 사용자 등록 */
+    INSERT INTO \`user\` (
+      company_id,
+      employee_number,
+      user_full_name,
+      role_id
+    ) VALUES (
+      :company_id,
+      :employee_number,
+      :user_full_name,
+      4
+    );
+  `;
+
+  const result = await conn.query(query, queryParams);
+  return result.insertId.toString();
+};
+
+
+/**
+ * findUserCustomSettings : 사용자 커스텀 설정 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 { user_id, company_id }
  * @returns : 커스텀 설정 객체
  */
-export const selectUserCustomSettings = async (conn, queryParams) => {
+export const findUserCustomSettings = async (conn, queryParams) => {
 
   const query = `
-    /* 사용자 커스텀 설정 조회 */
+    /* findUserCustomSettings: 사용자 커스텀 설정 조회 */
     SELECT 
       ucs.setting_id               AS setting_id,
       ucs.user_id                  AS user_id,
@@ -345,16 +372,16 @@ export const selectUserCustomSettings = async (conn, queryParams) => {
 
 
 /**
- * selectUserList : 사용자 목록 조회 (역할 정보 포함)
+ * findUsers : 사용자 목록 조회 (역할 정보 포함)
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 { company_id }
  * @returns 
  */
-export const selectUserList = async (conn, queryParams) => {
+export const findUsers = async (conn, queryParams) => {
   
   let query = `
-    /* 사용자 목록 조회 (역할 정보 포함) */
+    /* findUsers: 사용자 목록 조회 (역할 정보 포함) */
     SELECT
       u.user_id                                             AS user_id,
       u.employee_number                                     AS employee_number,
@@ -403,12 +430,11 @@ export const selectUserList = async (conn, queryParams) => {
     }
 
     if(queryParams.team_code != "ITS") {
-      query += ` AND d.department_id != 4`; // ITS 부서 제외
+      query += ` AND (d.department_id != 4 OR d.department_id IS NULL)`; // ITS 부서 제외
     }
     
     query += ` ORDER BY
-      d.team_name,
-      u.user_grade_id,
+      IFNULL(u.user_grade_id, 999),
       u.user_full_name;
   `;
 
@@ -427,7 +453,7 @@ export const selectUserList = async (conn, queryParams) => {
 export const updateUserInformation = async (conn, queryParams) => {
   
   const queryUser = `
-    /* 사용자 정보 수정 */
+    /* updateUserInformation: 사용자 정보 수정 */
     UPDATE
       user
     SET
@@ -445,16 +471,16 @@ export const updateUserInformation = async (conn, queryParams) => {
 
 /* ============================== 메뉴 ============================== */
 /**
- * selectMenuList : 메뉴 목록 조회
+ * findMenus : 메뉴 목록 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 { company_id }
  * @returns : 메뉴 목록 배열
  */
-export const selectMenuList = async (conn, queryParams) => {
+export const findMenus = async (conn, queryParams) => {
 
   let query = `
-    /* 메뉴 목록 조회 */
+    /* findMenus: 메뉴 목록 조회 */
     SELECT
       m.menu_id             AS menu_id
       , m.parent_menu_id    AS parent_menu_id
@@ -515,7 +541,7 @@ export const selectMenuList = async (conn, queryParams) => {
 export const insertParentMenu = async (conn, queryParams) => {
 
   const query = `
-    /* 최상위 메뉴 등록 */
+    /* insertParentMenu: 최상위 메뉴 등록 */
     INSERT INTO menu (
       company_id,
       menu_code,
@@ -556,7 +582,7 @@ export const insertParentMenu = async (conn, queryParams) => {
 export const updateParentMenu = async (conn, queryParams) => {
 
   const query = `
-    /* 최상위 메뉴 수정 */
+    /* updateParentMenu: 최상위 메뉴 수정 */
     UPDATE 
       menu
     SET
@@ -574,11 +600,17 @@ export const updateParentMenu = async (conn, queryParams) => {
 };
 
 
-
+/**
+ * insertSubMenu : 서브 메뉴 등록
+ * --------------------------------------------
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} queryParams : 등록 파라미터
+ * @returns 
+ */
 export const insertSubMenu = async (conn, queryParams) => {
 
   const query = `
-    /* 서브 메뉴 등록 */
+    /* insertSubMenu: 서브 메뉴 등록 */
     INSERT INTO menu (
       company_id,
       parent_menu_id,
@@ -612,7 +644,7 @@ export const insertSubMenu = async (conn, queryParams) => {
 
 
 /**
- * updateSubMenu : 2차/3차 메뉴 수정
+ * updateSubMenu : 2차 메뉴 수정
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 수정 파라미터
@@ -621,7 +653,7 @@ export const insertSubMenu = async (conn, queryParams) => {
 export const updateSubMenu = async (conn, queryParams) => {
 
   const query = `
-    /* 서브 메뉴 수정 */
+    /* updateSubMenu: 2차 메뉴 수정 */
     UPDATE 
       menu
     SET
@@ -705,16 +737,16 @@ export const insertMenuPermission = async (conn, queryParams) => {
 
 /* ============================== 권한 ============================== */
 /**
- * selectRoleList : 역할 목록 조회
+ * findRoles : 역할 목록 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns 
  */
-export const selectRoleList = async (conn, queryParams) => {
+export const findRoles = async (conn, queryParams) => {
 
   let query = `
-    /* selectRoleList : 역할 목록 조회 */
+    /* findRoles : 역할 목록 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY r.role_id) AS idx,
       r.role_id                             AS role_id,
@@ -749,15 +781,15 @@ export const selectRoleList = async (conn, queryParams) => {
 
 
 /**
- * selectPermissionByRoleId : 역할별 권한 조회
+ * findPermissionsByRoleId : 역할별 권한 조회
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns 
  */
-export const selectPermissionByRoleId = async (conn, queryParams) => {
+export const findPermissionsByRoleId = async (conn, queryParams) => {
 
   let query = `
-    /* 역할별 권한 조회 */
+    /* findPermissionsByRoleId: 역할별 권한 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY p.permission_id) AS idx,
       p.permission_id                             AS permission_id,
@@ -932,16 +964,16 @@ export const insertRolePermissionsBulk = async (conn, queryParams) => {
 
 
 /**
- * selectPermissionList : 권한 목록 조회
+ * findPermissions : 권한 목록 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns 
  */
-export const selectPermissionList = async (conn, queryParams) => {
+export const findPermissions = async (conn, queryParams) => {
 
   let query = `
-    /* 권한 목록 조회 */
+    /* findPermissions: 권한 목록 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY p.permission_id) AS idx,
       p.permission_id                             AS permission_id,
@@ -1054,7 +1086,7 @@ export const updatePermission = async (conn, queryParams) => {
 
 /* ============================== 메뉴 접근 권한 ============================== */
 /**
- * selectAccessibleMenusByRole : 역할별 접근 가능한 메뉴 조회 (depth 3 계층 구조)
+ * findAccessibleMenusByRole : 역할별 접근 가능한 메뉴 조회 (depth 3 계층 구조)
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 { company_id, role_id }
@@ -1071,7 +1103,7 @@ export const updatePermission = async (conn, queryParams) => {
  *   2. requires_permission = 0인 depth 2 메뉴는 하위 메뉴가 있으면 자동 포함
  *   3. 접근 가능한 메뉴들의 부모인 depth 1 메뉴 자동 포함
  */
-export const selectAccessibleMenusByRole = async (conn, queryParams) => {
+export const findAccessibleMenusByRole = async (conn, queryParams) => {
 
   const query = `
     WITH accessible_depth3_menus AS (

@@ -8,16 +8,16 @@
 
 /* ============================== 옵션 ============================== */
 /**
- * selectManagerTypeOptions : CT 매니저 타입 옵션 조회
+ * findManagerTypeOptions : CT 매니저 타입 옵션 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns {Promise<Array<Object>>} : 담당자 유형 목록 배열
  */
-export const selectManagerTypeOptions = async (conn, queryParams) => {
+export const findManagerTypeOptions = async (conn, queryParams) => {
 
   const query = `
-    /* selectManagerTypeOptions : CT 매니저 타입 옵션 조회 */
+    /* findManagerTypeOptions : CT 매니저 타입 옵션 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY mt.manager_type_id)  AS idx,
       mt.module_category                              AS module_category,
@@ -42,16 +42,16 @@ export const selectManagerTypeOptions = async (conn, queryParams) => {
 
 
 /**
- * selectJudgmentOptions : CT 판정 옵션 조회
+ * findJudgmentOptions : CT 판정 옵션 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns {Promise<Array<Object>>} : 판정 옵션 목록 배열
  */
-export const selectJudgmentOptions = async (conn, queryParams) => {
+export const findJudgmentOptions = async (conn, queryParams) => {
 
   const query = `
-    /* selectJudgmentOptions : CT 판정 옵션 조회 */
+    /* findJudgmentOptions : CT 판정 옵션 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY j.judgment_id) AS idx,
       j.judgment_id                             AS judgment_id,
@@ -76,16 +76,16 @@ export const selectJudgmentOptions = async (conn, queryParams) => {
 
 
 /**
- * selectUnitOptions : 단위 옵션 조회
+ * findUnitOptions : 단위 옵션 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns {Promise<Array<Object>>} : 단위 목록 배열
  */
-export const selectUnitOptions = async (conn, queryParams) => {
+export const findUnitOptions = async (conn, queryParams) => {
 
   const query = `
-    /* selectUnitOptions : 단위 옵션 조회 */
+    /* findUnitOptions : 단위 옵션 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY u.unit_id) AS idx,
       u.unit_id                             AS unit_id,
@@ -112,16 +112,16 @@ export const selectUnitOptions = async (conn, queryParams) => {
 
 
 /**
- * selectLabsDepartmentOptions : 제형담당부서 옵션 조회
+ * findLabsDepartmentOptions : 제형담당부서 옵션 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns {Promise<Array<Object>>} : 부서 목록 배열
  */
-export const selectLabsDepartmentOptions = async (conn, queryParams) => {
+export const findLabsDepartmentOptions = async (conn, queryParams) => {
 
   const query = `
-    /* selectLabsDepartmentOptions : 제형담당부서 옵션 조회 */
+    /* findLabsDepartmentOptions : 제형담당부서 옵션 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY d.labs_department_id)  AS idx,
       d.labs_department_id                              AS labs_department_id,
@@ -210,15 +210,15 @@ export const insertLabsDepartmentOptions = async (conn, queryParams) => {
 
 
 /**
- * selectUserGradeList : 사용자 직급 목록 조회
+ * findUserGrades : 사용자 직급 목록 조회
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns 
  */
-export const selectUserGradeList = async (conn, queryParams) => {
+export const findUserGrades = async (conn, queryParams) => {
 
   const query = `
-    /* selectUserGradeList : 사용자 직급 목록 조회 */
+    /* findUserGrades : 사용자 직급 목록 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY ug.sort_order)   AS idx,
       ug.user_grade_id                            AS user_grade_id,
@@ -244,15 +244,15 @@ export const selectUserGradeList = async (conn, queryParams) => {
 
 
 /**
- * selectDepartmentList : 부서 목록 조회
+ * findDepartmentOptions : 부서 목록 조회
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns 
  */
-export const selectDepartmentList = async (conn, queryParams) => {
+export const findDepartmentOptions = async (conn, queryParams) => {
 
   const query = `
-    /* selectDepartmentList : 부서 목록 조회 */
+    /* findDepartmentOptions : 부서 목록 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY d.sort_order)    AS idx,
       d.department_id                             AS department_id,
@@ -356,16 +356,16 @@ export const updateUserCustomSettings = async (conn, queryParams) => {
 
 /* ============================== 결재선 관리 ============================== */
 /**
- * selectApprovalDocumentTypes : CT 결재 문서 유형 조회
+ * findApprovalDocumentTypes : CT 결재 문서 유형 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns {Promise<Array<Object>>} : 결재 문서 유형 목록 배열
  */
-export const selectApprovalDocumentTypes = async (conn, queryParams) => {
+export const findApprovalDocumentTypes = async (conn, queryParams) => {
 
   const query = `
-    /* selectApprovalDocumentTypes : CT 결재 문서 유형 조회 */
+    /* findApprovalDocumentTypes : CT 결재 문서 유형 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY adt.approval_document_type_id) AS idx,
       adt.approval_document_type_id                             AS approval_document_type_id,
@@ -390,15 +390,15 @@ export const selectApprovalDocumentTypes = async (conn, queryParams) => {
 
 
 /**
- * selectApprovalTemplates : 결재 템플릿 목록 조회 (결재선 개수 포함)
+ * findApprovalTemplates : 결재 템플릿 목록 조회 (결재선 개수 포함)
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터
  * @returns {Promise<Array<Object>>} : 템플릿 정보 배열 (결재선 개수 포함)
  */
-export const selectApprovalTemplates = async (conn, queryParams) => {
+export const findApprovalTemplates = async (conn, queryParams) => {
   const query = `
-    /* selectApprovalTemplates : 결재 템플릿 목록 조회 (결재선 개수 포함) */
+    /* findApprovalTemplates : 결재 템플릿 목록 조회 (결재선 개수 포함) */
     SELECT
       ROW_NUMBER() OVER(ORDER BY at.approval_template_id)   AS idx,
       at.approval_template_id                               AS approval_template_id,
@@ -484,27 +484,6 @@ export const updateApprovalTemplate = async (conn, queryParams) => {
       is_default = :is_default,
       is_active = :is_active,
       updated_by = :updated_by
-    WHERE
-      company_id = :company_id
-      AND approval_template_id = :approval_template_id;
-  `;
-
-  const result = await conn.query(query, queryParams);
-  return result;
-};
-
-
-/**
- * deleteApprovalTemplate : 결재 템플릿 삭제
- * --------------------------------------------
- * @param {*} conn : 데이터베이스 연결 객체
- * @param {*} queryParams : 삭제 파라미터
- * @returns {Promise<Object>} : 삭제 결과
- */
-export const deleteApprovalTemplate = async (conn, queryParams) => {
-  const query = `
-    /* deleteApprovalTemplate : 결재 템플릿 삭제 */
-    DELETE FROM approval_template
     WHERE
       company_id = :company_id
       AND approval_template_id = :approval_template_id;
@@ -653,16 +632,16 @@ export const deactivateApprovalLineTemplatesByTemplateId = async (conn, queryPar
 
 
 /**
- * selectApprovalTemplateWithLines : 결재 템플릿 상세 정보 및 결재선 목록 조회
+ * findApprovalTemplateWithLines : 결재 템플릿 상세 정보 및 결재선 목록 조회
  * --------------------------------------------
  * @param {*} conn : 데이터베이스 연결 객체
  * @param {*} queryParams : 조회 파라미터 (company_id, approval_template_id)
  * @returns {Promise<Object>} : 템플릿 정보와 결재선 목록 객체
  */
-export const selectApprovalTemplateWithLines = async (conn, queryParams) => {
+export const findApprovalTemplateWithLines = async (conn, queryParams) => {
   // 템플릿 정보 조회
   const templateQuery = `
-    /* selectApprovalTemplateWithLines : 결재 템플릿 정보 조회 */
+    /* findApprovalTemplateWithLines : 결재 템플릿 정보 조회 */
     SELECT
       at.approval_template_id         AS approval_template_id,
       at.company_id                   AS company_id,
@@ -684,7 +663,7 @@ export const selectApprovalTemplateWithLines = async (conn, queryParams) => {
 
   // 결재선 목록 조회
   const linesQuery = `
-    /* selectApprovalTemplateWithLines : 결재선 목록 조회 */
+    /* findApprovalTemplateWithLines : 결재선 목록 조회 */
     SELECT
       ROW_NUMBER() OVER(ORDER BY alt.step, alt.sort_order) AS idx,
       alt.approval_line_template_id   AS approval_line_template_id,
