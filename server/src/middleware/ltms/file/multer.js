@@ -89,32 +89,41 @@ const storage = multer.diskStorage({
   },
 
   filename: (req, file, cb) => {
+    // multer는 파일명을 latin1 인코딩으로 받으므로 UTF-8로 재변환
+    const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    
     // 이미지 MIME 타입 목록
     const imageMimeTypes = [
       'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
       'image/webp', 'image/bmp', 'image/svg+xml'
     ];
-    const ext = path.extname(file.originalname);
-    const basename = path.basename(file.originalname, ext);
+    const ext = path.extname(originalname);
+    const basename = path.basename(originalname, ext);
+    
     // 이미지 파일은 기존 방식대로 새 이름 생성
     if (imageMimeTypes.includes(file.mimetype)) {
       const timestamp = Date.now();
       const random = Math.floor(Math.random() * 10000);
-      const safeBasename = basename.replace(/[^a-zA-Z0-9가-힣]/g, '_').substring(0, 50);
+      // 한글(가-힣), 영문(a-zA-Z), 숫자(0-9), 공백, 하이픈, 언더스코어만 허용
+      const safeBasename = basename
+        .replace(/[^a-zA-Z0-9가-힣\s\-_]/g, '_')
+        .replace(/\s+/g, '_')  // 공백을 언더스코어로
+        .replace(/_+/g, '_')    // 연속 언더스코어 하나로
+        .substring(0, 50);
       const newFilename = `${timestamp}_${random}_${safeBasename}${ext}`;
+      console.log(`💾 원본 파일명: ${originalname}`);
       console.log(`💾 저장될 이미지 파일명: ${newFilename}`);
       cb(null, newFilename);
     } else {
-      // 문서 등은 원본 파일명 보존 (한글, 영문, 숫자, 공백, -, _, (, ), [, ], .만 허용, 연속 밑줄은 하나로)
+      // 문서 등은 원본 파일명 보존 (한글, 영문, 숫자, 공백, -, _, (, ), [, ], .만 허용)
       let safeBasename = basename
         .replace(/[^a-zA-Z0-9가-힣 _\-\(\)\[\]\.]/g, '_') // 허용 문자 외 _로 치환
-        .replace(/_+/g, '_') // 연속 밑줄 하나로
-        .replace(/^_+|_+$/g, '') // 앞뒤 밑줄 제거
+        .replace(/_+/g, '_')      // 연속 밑줄 하나로
+        .replace(/^_+|_+$/g, '')  // 앞뒤 밑줄 제거
         .substring(0, 50);
-      // 공백이 모두 _로 바뀌는 게 싫으면 아래 라인 주석 해제
-      // safeBasename = safeBasename.replace(/ /g, '');
       const originalFilename = `${safeBasename}${ext}`;
-      console.log(`💾 저장될 문서 파일명(원본): ${originalFilename}`);
+      console.log(`💾 원본 파일명: ${originalname}`);
+      console.log(`💾 저장될 문서 파일명: ${originalFilename}`);
       cb(null, originalFilename);
     }
   }
@@ -127,6 +136,9 @@ const storage = multer.diskStorage({
  * - 보안상 위험한 확장자(.exe 등) 업로드 차단
  */
 const fileFilter = (req, file, cb) => {
+  // multer는 파일명을 latin1 인코딩으로 받으므로 UTF-8로 재변환
+  const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+  
   // 허용할 MIME 타입 목록
   const allowedMimeTypes = [
     // 이미지
@@ -155,7 +167,7 @@ const fileFilter = (req, file, cb) => {
   ];
   // 차단할 확장자 (보안 위험)
   const blockedExtensions = ['.exe', '.bat', '.cmd', '.com', '.scr', '.vbs', '.js', '.msi', '.app'];
-  const fileExtension = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
+  const fileExtension = originalname.toLowerCase().substring(originalname.lastIndexOf('.'));
   if (blockedExtensions.includes(fileExtension)) {
     cb(new Error(`보안상 ${fileExtension} 파일은 업로드할 수 없습니다.`), false);
     return;

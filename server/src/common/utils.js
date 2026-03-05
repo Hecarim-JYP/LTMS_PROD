@@ -460,3 +460,21 @@ export const checkInternalRequiredValue = (value, fieldName, fieldKR) => {
         throw error;
     }
 }
+
+
+/**
+ * decodeFileName : multer가 latin1로 받은 파일명을 UTF-8로 변환
+ * --------------------------------------------
+ * multer는 기본적으로 파일명을 latin1 인코딩으로 받으므로
+ * 한글 파일명이 깨지는 문제를 해결하기 위해 UTF-8로 재변환
+ * @param {string} filename : multer에서 받은 파일명
+ * @returns {string} : UTF-8로 변환된 파일명
+ */
+export const decodeFileName = (filename) => {
+  try {
+    return Buffer.from(filename, 'latin1').toString('utf8');
+  } catch (err) {
+    console.error('파일명 디코딩 실패:', err);
+    return filename; // 변환 실패 시 원본 반환
+  }
+};

@@ -62,9 +62,9 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
 
   // 판정 ID로 판정명 찾기
   const getJudgmentName = (judgmentId) => {
-    if (!judgmentId || judgmentOptions.length === 0) return '-';
-    const option = judgmentOptions.find(opt => opt.judgment_id === judgmentId);
-    return option ? option.judgment_name : '-';
+    if (!judgmentId || judgmentOptions.length == 0) return '-';
+    const option = judgmentOptions.find(opt => opt.judgment_id == judgmentId);
+    return option ? (language === 'KOR' ? option.judgment_name : option.judgment_name_en) : '-';
   };
 
   /**

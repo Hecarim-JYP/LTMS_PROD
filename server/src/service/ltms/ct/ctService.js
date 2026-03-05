@@ -8,6 +8,7 @@
 
 import { getPool } from '../../../repository/connection.js';
 import * as ctQuery from '../../../repository/sql/ltms/ct/ctQuery.js';
+import * as approvalQuery from '../../../repository/sql/ltms/approval/approvalQuery.js';
 import * as utils from '../../../common/utils.js';
 
 /* ============================== 의뢰 ============================== */
@@ -79,10 +80,10 @@ export const getCtRequests = async (params) => {
   try {
     conn = await getPool().getConnection();
 
-    const ctList = await ctQuery.findCtRequests(conn, queryParams);
+    const ctRequests = await ctQuery.findCtRequests(conn, queryParams);
 
     return {
-      result: ctList
+      result: ctRequests
     };
 
   } catch (err) {
@@ -351,6 +352,8 @@ export const updateCtRequest = async (params) => {
       desired_volume: utils.toNumberOrNull(requestInfo.desired_volume),                                 // 희망 용량
       desired_volume_unit_id: utils.toNumberOrNull(requestInfo.desired_volume_unit_id),                 // 희망 용량 단위 (기본값 mL)
       sleeve_length: utils.toNumberOrNull(requestInfo.sleeve_length),                                   // 슬리브 길이
+      is_cutting: utils.toBooleanInt(requestInfo.is_cutting),                                           // 컷팅 여부
+      is_include_tube: utils.toBooleanInt(requestInfo.is_include_tube),                                 // 튜브 포함 여부
       is_emergency: utils.toBooleanInt(requestInfo.is_emergency),                                       // 긴급여부
       is_cpnp: utils.toBooleanInt(requestInfo.is_cpnp),                                                 // CPNP여부
       is_eng: utils.toBooleanInt(requestInfo.is_eng),                                                   // ENG여부
@@ -551,7 +554,7 @@ const processTestItemFiles = async (conn, files, testReportId, itemId, index, ba
         reference_id: itemId,
         caution_type: null,
         file_url: `/uploads/ct/${file.fieldname.split('_')[0]}/${file.filename}`,
-        file_name: file.originalname,
+        file_name: utils.decodeFileName(file.originalname),
         file_size: file.size,
         file_mime_type: file.mimetype,
         file_category: 'test',
@@ -559,7 +562,7 @@ const processTestItemFiles = async (conn, files, testReportId, itemId, index, ba
         created_by: utils.toNumberOrNull(basicInfo.user_id)
       };
 
-      await ctQuery.insertCtTestReportAttachment(conn, attachmentParam);
+      await ctQuery.saveCtTestReportAttachment(conn, attachmentParam);
       processedFiles.push(file.filename);
     }
   }
@@ -594,7 +597,7 @@ const processCautionFiles = async (conn, files, testReportId, cautionId, index, 
         reference_id: cautionId,
         caution_type: type,
         file_url: `/uploads/ct/${file.fieldname.split('_')[0]}/${file.filename}`,
-        file_name: file.originalname,
+        file_name: utils.decodeFileName(file.originalname),
         file_size: file.size,
         file_mime_type: file.mimetype,
         file_category: 'caution',
@@ -602,7 +605,7 @@ const processCautionFiles = async (conn, files, testReportId, cautionId, index, 
         created_by: utils.toNumberOrNull(basicInfo.user_id)
       };
 
-      await ctQuery.insertCtTestReportAttachment(conn, attachmentParam);
+      await ctQuery.saveCtTestReportAttachment(conn, attachmentParam);
       processedFiles.push(file.filename);
     }
   }
@@ -631,7 +634,7 @@ const processRemainingFiles = async (conn, files, processedFileNames, testReport
       reference_id: null,
       caution_type: null,
       file_url: `/uploads/ct/${file.fieldname.split('_')[0]}/${file.filename}`,
-      file_name: file.originalname,
+      file_name: utils.decodeFileName(file.originalname),
       file_size: file.size,
       file_mime_type: file.mimetype,
       file_category: file.fieldname.split('_')[0],
@@ -639,7 +642,7 @@ const processRemainingFiles = async (conn, files, processedFileNames, testReport
       created_by: utils.toNumberOrNull(basicInfo.user_id)
     }));
 
-    await ctQuery.insertCtTestReportAttachments(conn, attachmentArray);
+    await ctQuery.saveCtTestReportAttachments(conn, attachmentArray);
   }
 };
 
@@ -806,6 +809,7 @@ export const getCtTestReportById = async (params) => {
         basicInfo: {
           ct_test_report_id: reportInfo.ct_test_report_id || "",
           ct_request_id: reportInfo.ct_request_id || "",
+          report_status: reportInfo.report_status || "",
           ct_no: reportInfo.ct_no || "",
           client_id: reportInfo.client_id || "",
           client_name: reportInfo.client_name || "",
@@ -963,6 +967,7 @@ export const createCtTestReport = async (params, files = []) => {
     const testReportParams = {
       company_id: utils.toNumberOrNull(basicInfo.company_id),
       ct_request_id: utils.toNumberOrNull(basicInfo.ct_request_id),
+      report_status: utils.toStringOrEmpty(basicInfo.report_status),
       material_image: utils.toStringOrEmpty(requestInfo.material_image),
       judgment_date: utils.formatDateOrNull(judgment.judgment_date),
       daily_judgment_id: utils.toNumberOrNull(judgment.daily_judgment_id),
@@ -1162,6 +1167,7 @@ export const updateCtTestReport = async (params, files = []) => {
     const testReportParams = {
       company_id: utils.toNumberOrNull(basicInfo.company_id),
       ct_test_report_id: utils.toNumberOrNull(basicInfo.ct_test_report_id),
+      report_status: utils.toStringOrEmpty(basicInfo.report_status),
       material_image: utils.toStringOrEmpty(requestInfo.material_image),
       judgment_date: utils.formatDateOrNull(judgment.judgment_date),
       daily_judgment_id: utils.toNumberOrNull(judgment.daily_judgment_id),
@@ -1195,10 +1201,11 @@ export const updateCtTestReport = async (params, files = []) => {
     // 4. 시험 항목 처리: 기존 데이터 조회 후 비교하여 UPDATE/INSERT/DELETE
     
     // 4-1. 기존 시험 항목 조회
-    const existingTestItems = await ctQuery.findCtTestItemsByReportId(conn, {
+    const testItemParams = {
       company_id: utils.toNumberOrNull(basicInfo.company_id),
       ct_test_report_id: utils.toNumberOrNull(basicInfo.ct_test_report_id)
-    });
+    };
+    const existingTestItems = await ctQuery.findCtTestItemsByReportId(conn, testItemParams);
 
     // 기존 항목 ID 목록
     const existingTestItemIds = existingTestItems.map(item => item.ct_test_item_id);
@@ -1224,7 +1231,8 @@ export const updateCtTestReport = async (params, files = []) => {
         const item = testItems[i];
         let itemId;
 
-        if (item.ct_test_item_id) {
+        // ct_test_item_id가 있고 유효한 숫자이면 UPDATE, 없으면(null/undefined) INSERT
+        if (item.ct_test_item_id && utils.toNumberOrNull(item.ct_test_item_id)) {
           // 기존 항목 UPDATE
           const updateData = {
             company_id: utils.toNumberOrNull(basicInfo.company_id),
@@ -1362,7 +1370,7 @@ export const updateCtTestReport = async (params, files = []) => {
         reference_id: utils.toNumberOrNull(file.fieldname.split('_')[1]) || null,
         caution_type: null,
         file_url: `/uploads/ct/${file.fieldname.split('_')[0]}/${file.filename}`,
-        file_name: file.originalname,
+        file_name: utils.decodeFileName(file.originalname),
         file_size: file.size,
         file_mime_type: file.mimetype,
         file_category: file.fieldname.split('_')[0], 
@@ -1497,184 +1505,6 @@ export const getRemarkHistorys = async (params) => {
   try {
     conn = await getPool().getConnection();
     const result = await ctQuery.findRemarkHistorys(conn, queryParams);
-
-    return {
-      result: result
-    };
-
-  } catch (err) {
-    throw err;
-  } finally {
-    if (conn) conn.release();
-  }
-};
-
-
-/* ============================== 결재 ============================== */
-/**
- * createCtReqApproval : CT 결재 문서 및 결재선 생성 (내부 함수)
- * @param {*} conn : 데이터베이스 연결 객체 (트랜잭션 공유)
- * @param {*} requestInfo : 의뢰 정보
- * @param {number} ctRequestId : CT 의뢰 ID
- * @returns : 생성된 결재 문서 ID 및 결재선 정보
- */
-const createCtReqApproval = async (conn, requestInfo, ctRequestId) => {
-
-  /**
-   * 1차 검증: 최상위 필수 파라미터 (requestInfo 존재 여부)
-   * 2차 검증: requestInfo 내부 필수 값 체크
-   * 3차 검증: ctRequestId 값 체크
-   */
-  utils.checkRequiredParams(requestInfo, ['company_id']);
-  utils.checkRequiredValue(ctRequestId, 'ct_request_id');
-
-  // 결재 문서 유형 정의
-  const documentType = 'CT_REQ';
-
-  const templateParams = {
-    company_id: utils.toNumberOrNull(requestInfo.company_id),
-    document_type: documentType
-  };
-
-  // 1. 결재 템플릿 조회 (approval_step 결정을 위해)
-  const approvalTemplate = await ctQuery.selectApprovalTemplate(conn, templateParams);
-
-  if (!approvalTemplate || approvalTemplate.length === 0) {
-    throw new Error('CT_REQ 결재 템플릿이 없습니다. 결재 문서가 생성되지 않습니다.');
-  }
-
-  // 결재 템플릿 ID 키 (기본 템플릿을 사용하도록 되어있음)
-  const approvalTemplateId = approvalTemplate[0].approval_template_id;
-
-  // 2. 결재 문서 생성 (approval_document 테이블에 삽입)
-  const params = {
-    company_id: utils.toNumberOrNull(requestInfo.company_id),
-    approval_template_id: utils.toNumberOrNull(approvalTemplateId),
-    document_type: documentType,
-    document_id: utils.toNumberOrNull(ctRequestId),
-    document_title: `CT의뢰서_${requestInfo.ct_no}`,
-    requester_id: utils.toNumberOrNull(requestInfo.ct_manager_id),
-    request_date: utils.formatDateOrNull(requestInfo.ct_request_date),
-    current_step: 1,
-    approval_status: 'PENDING'
-  };
-
-  // 결재 문서 생성 후 생성된 approval_document_id 반환
-  const approvalDocumentId = await ctQuery.insertApprovalDocument(conn, params);
-  
-  if (!approvalDocumentId) {
-    throw new Error('결재 문서 생성에 실패했습니다');
-  }
-
-  const lineParams = {
-    company_id: utils.toNumberOrNull(requestInfo.company_id),
-    approval_template_id: utils.toNumberOrNull(approvalTemplateId)
-  };
-
-  // 3. 결재선 템플릿 조회
-  const templateList = await ctQuery.selectApprovalLineTemplate(conn, lineParams);
-
-  if (!templateList || templateList.length === 0) {
-    throw new Error('결재선 템플릿이 없습니다. 결재선이 생성되지 않습니다.');
-  }
-
-  // 4. 결재선 생성 (approval_line 테이블에 삽입)
-  const approvalLines = templateList.map(template => ({
-    company_id: utils.toNumberOrNull(requestInfo.company_id) || 1,
-    approval_document_id: utils.toNumberOrNull(approvalDocumentId),
-    step: utils.toNumberOrNull(template.step),
-    user_grade_id: utils.toNumberOrNull(template.user_grade_id),
-    approver_id: utils.toNumberOrNull(template.approver_id),
-    department_id: utils.toNumberOrNull(template.department_id),
-    team_code: template.team_code || null,
-    approval_type: template.approval_type || 'APPROVE',
-    is_parallel: utils.toBooleanInt(template.is_parallel),
-    parallel_group_id: template.parallel_group_id || null,
-    parallel_approval_rule: template.parallel_approval_rule || 'ALL',
-    condition_type: template.condition_type || null,
-    condition_value: template.condition_value || null,
-    approval_status: 'PENDING',
-    sort_order: utils.toNumberOrNull(template.sort_order) || 1
-  }));
-
-  const approvalLineResult = await ctQuery.insertApprovalLines(conn, approvalLines);
-
-  if (!approvalLineResult || approvalLineResult.affectedRows === 0) {
-    throw new Error('결재선 생성에 실패했습니다');
-  }
-
-  return {
-    approval_document_id: approvalDocumentId,
-    approval_lines_count: approvalLineResult.affectedRows
-  };
-};
-
-
-/**
- * getCtApprovals : CT 결재 문서 목록 조회
- * --------------------------------------------
- * @param {*} params : 조회 필터 (company_id 필수, ct_request_id 선택)
- * @returns {Promise<Object>} : 결재 문서 목록과 관련 정보
- */
-export const getCtApprovals = async (params) => {
-
-  utils.checkRequiredParams(params, ['company_id']);
-
-  const queryParams = {
-    company_id: utils.toNumberOrNull(params.company_id),
-    ct_request_id: utils.toNumberOrNull(params.ct_request_id),
-    search_type: utils.toStringOrEmpty(params.search_type),
-    date_from: utils.formatDateOrNull(params.date_from),
-    date_to: utils.formatDateOrNull(params.date_to),
-    ct_no: utils.toStringOrEmpty(params.ct_no),
-    ct_content: utils.toStringOrEmpty(params.ct_content),
-    approval_status: params.approval_status || [],
-    document_type: utils.toStringOrEmpty(params.document_type)
-  };
-
-  let conn;
-
-  try {
-    conn = await getPool().getConnection();
-    const result = await ctQuery.findCtApprovals(conn, queryParams);
-    const approvalList = result.map(row => ({
-      ...row,
-      idx: row.idx ? row.idx.toString() : null, // id가 BigInt인 경우 문자열로 변환
-    }));
-
-    return {
-      result: approvalList
-    };
-
-  } catch (err) {
-    throw err;
-  } finally {
-    if (conn) conn.release();
-  }
-  
-};
-
-
-/**
- * CT 결재 상세 보기
- * @param {*} params : 조회 필터 (company_id, approval_document_id 필수)
- * @returns {Promise<Object>} : 결재 상세 데이터
- */
-export const getCtApprovalById = async (params) => {
-  
-  // 1차 검증: 최상위 필수 파라미터 체크
-  utils.checkRequiredParams(params, ['company_id', 'approval_document_id']);
-
-  const queryParams = {
-    company_id: utils.toNumberOrNull(params.company_id),
-    approval_document_id: utils.toNumberOrNull(params.approval_document_id)
-  };
-
-  let conn;
-
-  try {
-    conn = await getPool().getConnection();
-    const result = await ctQuery.findCtApprovalById(conn, queryParams);
 
     return {
       result: result

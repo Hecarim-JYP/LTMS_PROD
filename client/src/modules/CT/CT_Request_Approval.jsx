@@ -79,10 +79,8 @@ export default function CT_Request_Approval() {
     "search_type" : "C_REQ",      // 기본값은 CT 의뢰일자로 할당 (C_REQ : CT 의뢰일자, C_REC : CT 접수일자, C_TST : CT 시험일자, M_REQ : 자재 의뢰일자)
     "date_from" : G_STARTDAY,     // 조회 시작일자 (기본값은 오늘로부터 7일 전)
     "date_to" : G_TODAY,          // 조회 종료일자 (기본값은 오늘)
-    "ct_no" : "",                 // CT 번호 검색어  
-    "ct_content" : "",            // CT 내용 검색어
+    "search_keyword" : "",        // 검색어  
     "approval_status" : [],       // 결재 상태 배열 (PENDING, IN_PROGRESS, APPROVED, REJECTED, CANCELED)
-    "document_type" : "CT"        // 문서 유형 (기본값 CT)
   });
 
 
@@ -644,7 +642,7 @@ export default function CT_Request_Approval() {
       const params = Utils.cleanParams(searchForm);
       
       // 응답 객체
-      const res = await axios.get("/api/ltms/ct/approvals", { params });
+      const res = await axios.get("/api/ltms/approval/approvals", { params });
       const resultData = res.data.data.result || [];
 
       setApprovals(resultData);
@@ -690,7 +688,7 @@ export default function CT_Request_Approval() {
       };
       
       // 응답 객체
-      const res = await axios.get("/api/ltms/ct/approvals", { params });
+      const res = await axios.get("/api/ltms/approval/approvals", { params });
       const resultData = res.data.data.result || [];
 
       setApprovals(resultData);
@@ -813,18 +811,6 @@ export default function CT_Request_Approval() {
                   <input type="date" className="" id="searchForm_dateTo" name="date_to" value={searchForm.date_to ?? ""} ref={dateToRef} onChange={handleInputValue} required/>
                 </div>
 
-                <div className="ct-approval-grid-label">CT 번호</div>
-                <div className="ct-approval-grid-inline">
-                  <input type="search" style={{width:"100%"}} className="" id="searchForm_ctCode" name="ct_no" value={searchForm.ct_no} onChange={handleInputValue}/>
-                </div>
-
-                <div className="ct-approval-grid-label">검색어</div>
-                <div className="ct-approval-grid-inline">
-                  <input type="search" style={{width:"100%"}} className="" id="searchForm_ctContent" name="ct_content" value={searchForm.ct_content} onChange={handleInputValue}/>
-                </div>
-              </div>
-
-              <div className="ct-approval-grid ct-approval-grid-line-2">
                 <div className="ct-approval-grid-label">결재 상태</div>
                 <div className="ct-approval-grid-inline">
                   {approvalStatusOptions.map((opt, idx) => (
@@ -840,6 +826,13 @@ export default function CT_Request_Approval() {
                       <span>{opt.label}</span>
                     </label>
                   ))}
+                </div>
+              </div>
+
+              <div className="ct-approval-grid ct-approval-grid-line-2">
+                <div className="ct-approval-grid-label">검색어</div>
+                <div className="ct-approval-grid-inline">
+                  <input type="search" style={{width:"40%"}} className="" id="searchForm_searchKeyword" name="search_keyword" value={searchForm.search_keyword ?? ""} onChange={handleInputValue}/>
                 </div>
               </div>
               {/* ↑ 시험 성적서 조회 조건값 ↑ */}

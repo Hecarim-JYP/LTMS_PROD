@@ -165,6 +165,11 @@ pre {
     font-size: 20px;
 }
 
+.header-logo {
+    width: 550px;
+    margin: 15px 0px 0px -120px;
+}
+
 @media (max-width: 768px) {
     .search {
         width: 60%;
@@ -204,6 +209,36 @@ pre {
 
 .sidebar-header {
     flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.tree-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.tree-control-btn {
+    flex: 1;
+    background: var(--color-main-theme);
+    color: #fff;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.tree-control-btn:hover {
+    background: #17b857;
+    transform: translateY(-1px);
+}
+
+.tree-control-btn:active {
+    transform: translateY(0);
 }
 
 .sidebar-toggle {
@@ -2226,7 +2261,7 @@ pre {
 }
 
 .ct-create-grid-line-10 {
-    grid-template-columns: 60px 90px 80px 90px 70px 120px 80px 70px 70px 30px 30px 1fr;
+    grid-template-columns: 60px 90px 80px 90px 70px 120px 80px 70px 70px 50px 80px 40px 30px 1fr;
 }
 
 .ct-create-grid-line-11 {
@@ -2240,7 +2275,7 @@ pre {
 
 /* 시험성적서 조회 폼 */
 .ct-approval-grid-line-1 {
-    grid-template-columns: 60px 300px 60px 120px 60px 400px;
+    grid-template-columns: 60px 300px 60px 1fr;
 }
 
 .ct-approval-grid-line-2 {

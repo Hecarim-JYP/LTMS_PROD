@@ -54,6 +54,14 @@ export default function CT_TestReport_Report() {
    */
   const [loading, setLoading] = useState(null);
 
+  // 성적서 상태 옵션 (진행 중, 완료, 보류, 취소)
+  const [reportStatus, setReportStatus] = useState([
+   {label: "진행 중", value: "IN_PROGRESS"},
+   {label: "완료", value: "COMPLETED"},
+   {label: "보류", value: "SUSPENDED"},
+   {label: "취소", value: "CANCELLED"},
+  ]);
+
 
   /* =============================== 훅 관리 =============================== */
   /**
@@ -70,6 +78,7 @@ export default function CT_TestReport_Report() {
       judgment_id: "",
       judgment_code: "",
       judgment_name: "판정여부",
+      judgment_name_en: "Judgment",
       is_active: "",
       sort_order: ""
     }
@@ -104,6 +113,13 @@ export default function CT_TestReport_Report() {
   const packagingSectionIdCounter = useRef(1);
   const compatibilitySectionIdCounter = useRef(1);
 
+  /**
+   * 시험 항목의 고유 ID를 반환하는 헬퍼 함수
+   * - 기존 항목: ct_test_item_id
+   * - 새 항목: temp_id
+   */
+  const getTestItemId = (item) => item.ct_test_item_id || item.temp_id;
+
   // 이미지 파일 input ref 추가 (시험항목용)
   const testItemImageInputRefs = useRef({});
 
@@ -137,6 +153,7 @@ export default function CT_TestReport_Report() {
     basicInfo: {
       ct_test_report_id: "",
       ct_request_id: "",
+      report_status: "",
       ct_no: "",
       client_id: "",
       client_name: "",
@@ -866,7 +883,8 @@ export default function CT_TestReport_Report() {
         // 임시 ID 생성 (순차적 임시 ID)
         const newTestItems = testItems.map((item, index) => ({
           ...item,
-          ct_test_item_id: testItemIdCounter.current++, // 임시 순차 ID
+          temp_id: testItemIdCounter.current++, // UI 식별용 임시 ID
+          ct_test_item_id: null, // 새 항목이므로 null (서버에서 INSERT 처리)
           ct_test_report_id: reportId || "", // 현재 성적서 ID로 변경
           sort_order: index + 1,
           attachedImage: null, // 이미지는 초기화
@@ -1259,11 +1277,13 @@ export default function CT_TestReport_Report() {
         reportData.testItems.map(async (item) => {
           let processedImage = null;
           if (item.attachedImage) {
-            // attachedImage가 객체이고 preview 속성이 있는 경우
-            const imageSource = item.attachedImage.preview || item.attachedImage;
+            // 서버에서 가져온 이미지인 경우 전체 URL 사용
+            const imageSource = item.attachedImage.file_url 
+              ? `${API_BASE_URL}/api${item.attachedImage.file_url}` 
+              : (item.attachedImage.preview || item.attachedImage);
             const base64 = await blobUrlToBase64(imageSource);
             processedImage = {
-              name: item.attachedImage.name || 'image',
+              name: item.attachedImage.name || item.attachedImage.file_name || 'image',
               preview: base64
             };
           }
@@ -1568,7 +1588,8 @@ export default function CT_TestReport_Report() {
   const handleSelectTestStandard = (standard) => {
     // 새로운 시험항목 추가 (데이터베이스 컬럼명 사용)
     const newItem = {
-      ct_test_item_id: testItemIdCounter.current++,  // 임시 ID
+      temp_id: testItemIdCounter.current++,  // UI 식별용 임시 ID
+      ct_test_item_id: null,  // 새 항목이므로 null (서버에서 INSERT 처리)
       ct_test_report_id: reportId || "",
       test_id: standard.test_standard_id || "",
       test_standard_code: standard.test_standard_code || "",     // 시험법 코드
@@ -1639,7 +1660,7 @@ export default function CT_TestReport_Report() {
   const handleAllCheckbox = (e) => {
     if (e.target.checked) {
       // 전체 선택: 모든 행의 ID 추가
-      setSelectedRows(reportData.testItems.map(item => item.ct_test_item_id));
+      setSelectedRows(reportData.testItems.map(item => getTestItemId(item)));
     } else {
       // 전체 해제: 빈 배열
       setSelectedRows([]);
@@ -1658,7 +1679,7 @@ export default function CT_TestReport_Report() {
     setReportData(prev => ({
       ...prev,
       testItems: prev.testItems.map(item => 
-        item.ct_test_item_id === itemId ? { ...item, [field]: value } : item
+        getTestItemId(item) === itemId ? { ...item, [field]: value } : item
       )
     }));
 
@@ -1728,7 +1749,7 @@ export default function CT_TestReport_Report() {
     setReportData(prev => ({
       ...prev,
       testItems: prev.testItems.map(item =>
-        item.ct_test_item_id === itemId ? { ...item, attachedImage: file } : item
+        getTestItemId(item) === itemId ? { ...item, attachedImage: file } : item
       )
     }));
 
@@ -1743,7 +1764,7 @@ export default function CT_TestReport_Report() {
   const handleTestItemImageRemove = (itemId) => {
     if (confirm("첨부된 이미지를 삭제하시겠습니까?")) {
       // 삭제할 이미지의 첨부파일 ID 찾기
-      const targetItem = reportData.testItems.find(item => item.ct_test_item_id === itemId);
+      const targetItem = reportData.testItems.find(item => getTestItemId(item) === itemId);
       if (targetItem?.attachedImage?.ct_test_report_attachment_id) {
         // 서버에 저장된 이미지인 경우 삭제 목록에 추가
         setDeletedAttachmentIds(prev => [...prev, { 
@@ -1755,7 +1776,7 @@ export default function CT_TestReport_Report() {
       setReportData(prev => ({
         ...prev,
         testItems: prev.testItems.map(item =>
-          item.ct_test_item_id === itemId ? { ...item, attachedImage: null } : item
+          getTestItemId(item) === itemId ? { ...item, attachedImage: null } : item
         )
       }));
     }
@@ -2633,6 +2654,50 @@ export default function CT_TestReport_Report() {
     }
   };
 
+  /**
+   * requestApproval : 성적서 승인 요청 함수
+   * --------------------------------------------------------------
+   * - 성적서 승인 요청 전 사용자에게 확인 메시지 표시
+   * - API 호출하여 승인 요청 처리
+   * - 성공 시 사용자에게 완료 메시지 표시 후 성적서 조회 페이지로 이동
+   * - 실패 시 에러 메시지 표시
+   * @param {*} e 
+   * @returns 
+   */
+  const requestApproval = async (e) => {
+
+    if (!confirm("성적서 승인 결재를 상신하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const params = {
+        company_id: companyId,
+        requester_id: userId,
+        document_id: reportId,
+        document_number: reportData.basicInfo.ct_no,
+        document_type: "CT_TEST"
+      };
+
+      const response = await axios.post("/api/ltms/approval/request", params);
+
+      if (response.data && response.data.success) {
+        alert("승인 요청이 완료되었습니다.");
+        goToPage("/ct/testReport/read");
+      } else {
+        alert("승인 요청에 실패했습니다.\n" + (response.data.message || "알 수 없는 오류"));
+      }
+
+    } catch (err) {
+      console.log(err);
+      alert("승인 요청에 실패했습니다.\n" + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   /**
    * searchReport : 성적서 조회 함수
@@ -2732,6 +2797,7 @@ export default function CT_TestReport_Report() {
           judgment_id: "",
           judgment_code: "",
           judgment_name: "판정여부",
+          judgment_name_en: "Judgment",
           is_active: "",
           sort_order: ""
         },
@@ -2809,7 +2875,19 @@ export default function CT_TestReport_Report() {
               </div>
             </div>
             <div className="report-button">
+              <select id="report-status"
+                      className=""
+                      value={reportData.basicInfo.report_status || ""}
+                      onChange={(e) => handleBasicInfoChange('report_status', e.target.value)}
+                      >
+                {reportStatus.map((status, index) => (
+                  <option key={index} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
               <button type="button" className="btn-primary" onClick={saveReport}>{t.save}</button>
+              <button type="button" className="btn-primary" onClick={requestApproval}>{t.approval}</button>
               <button type="button" className="btn-info" onClick={handlePdfPreview}>{t.preview}</button>
               <button type="button" className="btn-primary">Excel</button>
               {/* <button type="button" onClick={handlePdfPreview}>PDF</button> */}
@@ -3171,14 +3249,16 @@ export default function CT_TestReport_Report() {
                     </tr>
                   </thead>
                   <tbody>
-                    {reportData.testItems.map((item, index) => (
+                    {reportData.testItems.map((item, index) => {
+                      const itemId = getTestItemId(item);
+                      return (
                       <tr key={index}>
                         {/* 개별 체크박스 */}
                         <td>
                           <input
                             type="checkbox"
-                            checked={selectedRows.includes(item.ct_test_item_id)} // selectedRows에 포함되면 체크
-                            onChange={() => handleRowCheckbox(item.ct_test_item_id)}
+                            checked={selectedRows.includes(itemId)} // selectedRows에 포함되면 체크
+                            onChange={() => handleRowCheckbox(itemId)}
                           />
                         </td>
                         
@@ -3188,13 +3268,13 @@ export default function CT_TestReport_Report() {
                             type="text"
                             className="tac"
                             value={item.test_standard_code || ""}
-                            onChange={(e) => handleTestItemChange(item.ct_test_item_id, "test_standard_code", e.target.value)}
-                            onClick={() => handleCopyTestItemField(item.ct_test_item_id, 'test_standard_code', item.test_standard_code)}
+                            onChange={(e) => handleTestItemChange(itemId, "test_standard_code", e.target.value)}
+                            onClick={() => handleCopyTestItemField(itemId, 'test_standard_code', item.test_standard_code)}
                             style={{ cursor: 'pointer' }}
                             title="클릭하여 복사"
                             readOnly
                           />
-                          {copiedTestItemField?.itemId === item.ct_test_item_id && copiedTestItemField?.field === 'test_standard_code' && (
+                          {copiedTestItemField?.itemId === itemId && copiedTestItemField?.field === 'test_standard_code' && (
                             <span style={{ 
                               position: 'absolute',
                               right: '5px',
@@ -3214,7 +3294,7 @@ export default function CT_TestReport_Report() {
                             type="text" 
                             className="tac"
                             value={item.test_standard_name || ""}
-                            onChange={(e) => handleTestItemChange(item.ct_test_item_id, "test_standard_name", e.target.value)}
+                            onChange={(e) => handleTestItemChange(itemId, "test_standard_name", e.target.value)}
                             readOnly
                           />
                         </td>
@@ -3224,7 +3304,7 @@ export default function CT_TestReport_Report() {
                           <input
                             type="text" 
                             value={item.test_guide || ""}
-                            onChange={(e) => handleTestItemChange(item.ct_test_item_id, "test_guide", e.target.value)}
+                            onChange={(e) => handleTestItemChange(itemId, "test_guide", e.target.value)}
                             readOnly
                           />
                         </td>
@@ -3235,26 +3315,26 @@ export default function CT_TestReport_Report() {
                             type="text"
                             className="tac"
                             value={item.test_result || ""}
-                            onChange={(e) => handleTestItemChange(item.ct_test_item_id, "test_result", e.target.value)}
+                            onChange={(e) => handleTestItemChange(itemId, "test_result", e.target.value)}
                           />
                         </td>
                         
                         {/* 시험 종합 의견 (클릭 시 모달 열림) */}
                         <td>
                           <textarea
-                            id={`remark_${item.ct_test_item_id}`} // 모달 열기 이벤트에서 사용
-                            ref={(el) => (testItemTextareaRefs.current[`remark_${item.ct_test_item_id}`] = el)}
+                            id={`remark_${itemId}`} // 모달 열기 이벤트에서 사용
+                            ref={(el) => (testItemTextareaRefs.current[`remark_${itemId}`] = el)}
                             value={item.remark || ""}
-                            onChange={(e) => handleTestItemChange(item.ct_test_item_id, "remark", e.target.value)}
+                            onChange={(e) => handleTestItemChange(itemId, "remark", e.target.value)}
                           />
                         </td>
                         
                         {/* 비고 */}
                         <td>
                           <textarea
-                            ref={(el) => (testItemTextareaRefs.current[`note_${item.ct_test_item_id}`] = el)}
+                            ref={(el) => (testItemTextareaRefs.current[`note_${itemId}`] = el)}
                             value={item.note || ""}
-                            onChange={(e) => handleTestItemChange(item.ct_test_item_id, "note", e.target.value)}
+                            onChange={(e) => handleTestItemChange(itemId, "note", e.target.value)}
                           />
                         </td>
                         
@@ -3274,7 +3354,7 @@ export default function CT_TestReport_Report() {
                               <button
                                 type="button"
                                 className="test-item-image-delete-btn"
-                                onClick={() => handleTestItemImageRemove(item.ct_test_item_id)}
+                                onClick={() => handleTestItemImageRemove(itemId)}
                               >
                                 ✕
                               </button>
@@ -3289,22 +3369,23 @@ export default function CT_TestReport_Report() {
                           {/* 숨겨진 파일 input */}
                           <input
                             type="file"
-                            ref={(el) => (testItemImageInputRefs.current[item.ct_test_item_id] = el)}
+                            ref={(el) => (testItemImageInputRefs.current[itemId] = el)}
                             accept="image/*"
-                            onChange={(e) => handleTestItemImageAttach(item.ct_test_item_id, e)}
+                            onChange={(e) => handleTestItemImageAttach(itemId, e)}
                             style={{ display: "none" }}
                           />
                           {/* 첨부 버튼 (클릭 시 파일 input 열기) */}
                           <button 
                             type="button"
                             className="test-item-attach-btn btn-success"
-                            onClick={() => handleTestItemAttachClick(item.ct_test_item_id)}
+                            onClick={() => handleTestItemAttachClick(itemId)}
                           >
                             {t.attach}
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -3664,7 +3745,9 @@ export default function CT_TestReport_Report() {
                           onChange={(e) => handleJudgmentChange('daily_judgment_id', e.target.value)}
                         >
                           {judgmentOptions.map((opt, idx) => (
-                            <option key={idx} value={opt.judgment_id}>{opt.judgment_name}</option>
+                            <option key={idx} value={opt.judgment_id}>
+                              {language === 'KOR' ? opt.judgment_name : opt.judgment_name_en}
+                            </option>
                           ))}
                         </select>
                       </td>
@@ -3714,7 +3797,9 @@ export default function CT_TestReport_Report() {
                           onChange={(e) => handleJudgmentChange('final_judgment_id', e.target.value)}
                         >
                           {judgmentOptions.map((opt, idx) => (
-                            <option key={idx} value={opt.judgment_id}>{opt.judgment_name}</option>
+                            <option key={idx} value={opt.judgment_id}>
+                              {language === 'KOR' ? opt.judgment_name : opt.judgment_name_en}
+                            </option>
                           ))}
                         </select>
                       </td>
@@ -3743,13 +3828,13 @@ export default function CT_TestReport_Report() {
                   src={selectedImage.preview}
                   alt={selectedImage.name || "원본 이미지"}
                 />
-                <button
+                {/* <button
                   type="button"
                   className="image-modal-close-btn"
                   onClick={handleCloseImageModal}
                 >
                   ✕
-                </button>
+                </button> */}
                 {/* 파일명 표시 (시험항목 이미지인 경우에만) */}
                 {/* {selectedImage.isFile && (
                   <div className="image-modal-filename">

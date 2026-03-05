@@ -376,4 +376,92 @@ router.post('/templates/batch', async (req, res) => {
   }
 });
 
+
+/**
+ * 🔧 결재요청 (결재 문서 생성)
+ */
+router.post('/request', async (req, res) => {
+  try {
+    const params = {
+      company_id: req.body.company_id,
+      requester_id: req.body.user_id,
+      document_id: req.body.document_id,
+      document_number: req.body.document_number,
+      document_type: req.body.document_type
+    };
+    
+    const result = await approvalService.createApproval(params);
+    
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: '결재 요청 생성 성공'
+    });
+  } catch (err) {
+    console.error('결재 요청 생성 오류:', err);
+    res.status(500).json({
+      success: false,
+      message: '결재 요청 생성 중 오류가 발생했습니다.',
+      error: err.message
+    });
+  }
+});
+
+
+/**
+ * 🔍 결재 데이터 목록 조회
+ */
+router.get('/approvals', async (req, res) => {
+  try {
+    const result = await approvalService.getApprovals(req.query);
+    res.json({ 
+      success: true, 
+      data: result 
+    });
+
+  } catch (err) {
+    console.error("❌ 결재 데이터 조회 실패:", err.message);
+    res.status(500).json({ 
+      success: false, 
+      error: {
+        message: err.message,
+        code: err.code,
+        errno: err.errno,
+        sqlState: err.sqlState,
+        sql: err.sql
+      },
+      message: err.message,
+    });
+  }
+});
+
+
+/**
+ * 결재 상세 보기
+ */
+router.get('/approval/detail', async (req, res) => {
+  try {
+    const result = await approvalService.getApprovalById(req.query);
+    res.json({ 
+      success: true, 
+      data: result 
+    });
+    
+  } catch (err) {
+    console.error("❌ 결재 데이터 조회 실패:", err.message);
+    res.status(500).json({ 
+      success: false, 
+      error: {
+        message: err.message,
+        code: err.code,
+        errno: err.errno,
+        sqlState: err.sqlState,
+        sql: err.sql
+      },
+      message: err.message,
+    });
+  }
+});
+
+
 export default router;

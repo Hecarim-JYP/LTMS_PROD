@@ -3,6 +3,7 @@ CREATE TABLE `approval_line` (
   `approval_line_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'PK',
   `company_id` int(11) NOT NULL DEFAULT 1 COMMENT '회사 pk(외래키)',
   `approval_document_id` int(11) DEFAULT NULL COMMENT '결재 문서 pk (외래키)',
+  `document_type` varchar(20) DEFAULT NULL COMMENT '문서 유형 (CT_REQ, CT_TEST 등)',
   `step` int(11) NOT NULL COMMENT '결재 단계 (1, 2, 3...)',
   `user_grade_id` int(11) DEFAULT NULL COMMENT '필요 직급 pk (수석, 이사 등) (외래키)',
   `approver_id` int(11) DEFAULT NULL COMMENT '결재자 pk (외래키)',
@@ -39,5 +40,7 @@ CREATE TABLE `approval_line` (
   KEY `idx_approver_status` (`approver_id`,`approval_status`) COMMENT '결재자-상태 복합 조회',
   KEY `idx_parallel_group` (`parallel_group_id`) COMMENT '병렬 그룹 조회',
   KEY `idx_delegated_from` (`delegated_from_user_id`) COMMENT '위임자 조회',
-  KEY `idx_approval_type` (`approval_type`) COMMENT '결재 유형별 조회'
+  KEY `idx_approval_type` (`approval_type`) COMMENT '결재 유형별 조회',
+  KEY `idx_document_type` (`document_type`) COMMENT '문서 유형별 조회',
+  KEY `idx_document_type_status` (`document_type`,`approval_status`) COMMENT '문서 유형-상태 복합 조회'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='결재선 테이블 - 고급 기능 포함';

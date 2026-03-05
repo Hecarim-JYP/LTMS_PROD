@@ -174,7 +174,8 @@ const registerUserFromERP = async (conn, queryParams, erpUserInfo) => {
   const newUserParams = {
     company_id: queryParams.company_id,
     employee_number: queryParams.user_name,
-    user_full_name: erpUserInfo.result.UserName
+    user_full_name: erpUserInfo.result.UserName,
+    temp_company_seq: erpUserInfo.result.DeptSeq
   };
 
   const isRegistered = await authQuery.checkUserExists(conn, newUserParams);
@@ -692,7 +693,7 @@ export const getUsers = async (params) => {
   const queryParams = {
     company_id: utils.toNumberOrNull(params.company_id),
     is_setting: utils.toNumberOrNull(params.is_setting),
-    team_code: utils.toStringOrEmpty(params.team_code),
+    department_id: utils.toStringOrEmpty(params.department_id),
   }
 
   let conn;

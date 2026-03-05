@@ -11,6 +11,7 @@ export const ctTranslations = {
     // ========== 페이지 제목 및 기본 버튼 ==========
     pageTitle: "자재 상용성 시험 성적서",
     save: "저장",
+    approval: "상신",
     preview: "미리보기",
     close: "닫기",
     print: "인쇄",
@@ -90,11 +91,12 @@ export const ctTranslations = {
   EN: {
     // ========== Page Title & Basic Buttons ==========
     pageTitle: "Material Compatibility Test Report",
-    save: "Save",
-    preview: "Preview",
-    close: "Close",
-    print: "Print",
-    downloadPDF: "Download PDF",
+    save: "저장",
+    approval: "상신",
+    preview: "미리보기",
+    close: "닫기",
+    print: "인쇄",
+    downloadPDF: "PDF 다운로드",
     
     // ========== Basic Information ==========
     ctNo: "CT No.",
@@ -117,9 +119,9 @@ export const ctTranslations = {
     materialInfo: "Material Information",
     
     // ========== Test Items ==========
-    addTest: "Add Test",
-    deleteTest: "Delete Test",
-    loadPreviousTest: "Load Previous Test",
+    addTest: "시험 추가",
+    deleteTest: "시험 삭제",
+    loadPreviousTest: "이전 시험 불러오기",
     testNo: "Test No.",
     testName: "Test Item",
     testStandard: "Test Standard",
@@ -127,7 +129,7 @@ export const ctTranslations = {
     testSummary: "Test Summary",
     remark: "Remark",
     attachedImage: "Attached Image",
-    attach: "Attach",
+    attach: "첨부",
     
     // ========== Cautions ==========
     caution: "Caution",
