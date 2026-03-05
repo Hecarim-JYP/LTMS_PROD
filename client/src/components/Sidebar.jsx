@@ -6,7 +6,7 @@
  * 수정사항 : TreeItem을 Sidebar 내부 함수(useCallBack)로 변경
  */
 
-import React, { useContext, useMemo, useCallback, useRef, useEffect } from "react";
+import { useContext, useMemo, useCallback, useRef, useEffect, useLayoutEffect } from "react";
 
 import useUrlInfo from "/src/hooks/useUrlInfo";
 
@@ -29,10 +29,7 @@ export default function Sidebar() {
     expandedKeys, setExpandedKeys
   } = useContext(SidebarContext);
 
-  const { 
-    getModuleDefaultAction,
-    user
-  } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
 
   /****************************************************************************
@@ -41,8 +38,15 @@ export default function Sidebar() {
    * refSidebar
    * - 실제 사이드바 DOM을 제어하거나 이벤트 바인딩(예: focus) 등에 사용될 수 있음
    * - 실제 DOM element를 읽기 위해 사용
+   * 
+   * refTreeItemsMap
+   * - 각 TreeItem의 DOM 참조를 저장하여 자동 스크롤에 사용
    ****************************************************************************/
   const refSidebar = useRef(null);
+  const refTreeItemsMap = useRef(new Map());
+  const refSidebarMain = useRef(null);
+
+  const SCROLL_POSITION_KEY = 'ltms_sidebar_scroll_position';
 
 
   /****************************************************************************
@@ -58,19 +62,6 @@ export default function Sidebar() {
    * NOTE : 1depth 메뉴는 서버에서 자동 포함됨 (카테고리 헤더)
    ****************************************************************************/
   const menuList = user?.accessibleMenus || [];  
-
-
-  /****************************************************************************
-   * 사용자 설정 기반 action URL 생성 함수 (사용 안함)
-   * -------------------------------------------
-   * NOTE : 새로운 메뉴 구조에서는 depth 3 메뉴가 명확한 menu_path를 가지므로
-   *        동적 URL 생성이 불필요함. menu_path를 그대로 사용.
-   ****************************************************************************/
-  // const getActionUrl = useCallback((parentKey, childKey) => {
-  //   // 더 이상 사용하지 않음 - menu_path를 직접 사용
-  //   return '';
-  // }, []);
-
   
   /****************************************************************************
    * buildTreeRecursive : parent_menu_id 기반 재귀적 트리 구조 생성
@@ -169,16 +160,113 @@ export default function Sidebar() {
    * CAUTION : deps가 []이므로 toggleExpand는 최초 렌더링 때 만들어진 함수 그대로 유지
    *           setExpandedKeys는 React가 보장하는 stable function이므로 deps에 넣지 않아도 안전
    ****************************************************************************/
-  const toggleExpand = useCallback((key) => {
+  const toggleExpand = useCallback((key, skipScroll = false) => {
     setExpandedKeys((prev) => {
       const next = new Set(prev);
+      const willExpand = !next.has(key);
+      
       next.has(key) ? next.delete(key) : next.add(key);
+      
+      // 펼칠 때 자동 스크롤 (skipScroll이 false일 때만)
+      if (willExpand && !skipScroll) {
+        setTimeout(() => {
+          const element = refTreeItemsMap.current.get(key);
+          if (element && refSidebarMain.current) {
+            const elementRect = element.getBoundingClientRect();
+            const sidebarRect = refSidebarMain.current.getBoundingClientRect();
+            
+            // 요소가 뷰포트 아래에 있으면 스크롤
+            if (elementRect.bottom > sidebarRect.bottom) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              // 스크롤 후 새로운 위치 저장
+              setTimeout(() => {
+                if (refSidebarMain.current) {
+                  sessionStorage.setItem(SCROLL_POSITION_KEY, refSidebarMain.current.scrollTop.toString());
+                }
+              }, 500); // smooth 스크롤 애니메이션 완료 후 저장
+            }
+          }
+        }, 100);
+      }
+      
       return next;
     });
   }, []);
 
+  /****************************************************************************
+   * expandAll : 모든 메뉴 펼치기
+   * -------------------------------------------
+   ****************************************************************************/
+  const expandAll = useCallback(() => {
+    const allKeys = new Set();
+    const collectKeys = (nodes) => {
+      nodes.forEach(node => {
+        if (node.children && node.children.length > 0) {
+          allKeys.add(node.key);
+          collectKeys(node.children);
+        }
+      });
+    };
+    collectKeys(navTree);
+    setExpandedKeys(allKeys);
+  }, [navTree]);
 
-  // URL 기반 자동 펼침
+  /****************************************************************************
+   * collapseAll : 모든 메뉴 접기
+   * -------------------------------------------
+   ****************************************************************************/
+  const collapseAll = useCallback(() => {
+    setExpandedKeys(new Set());
+  }, []);
+
+
+  // 스크롤 위치 저장 (sessionStorage 사용)
+  useEffect(() => {
+    const sidebarMain = refSidebarMain.current;
+    if (!sidebarMain) return;
+
+    // 스크롤 위치 저장 함수 (throttle 적용)
+    let scrollTimeout = null;
+    const handleScroll = () => {
+      // 이전 타이머 취소
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      
+      // 스크롤이 멈춘 후 50ms 뒤에 저장 (성능 최적화)
+      scrollTimeout = setTimeout(() => {
+        sessionStorage.setItem(SCROLL_POSITION_KEY, sidebarMain.scrollTop.toString());
+      }, 50);
+    };
+
+    // 스크롤 이벤트 리스너 등록
+    sidebarMain.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      sidebarMain.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+    };
+  }, []);
+
+  // 스크롤 위치 복원 - 모든 렌더링 후 실행 (useLayoutEffect로 화면 깜빡임 방지)
+  useLayoutEffect(() => {
+    const sidebarMain = refSidebarMain.current;
+    if (!sidebarMain) return;
+
+    // 저장된 스크롤 위치 복원
+    const savedScrollPosition = sessionStorage.getItem(SCROLL_POSITION_KEY);
+    if (savedScrollPosition) {
+      const scrollPos = parseInt(savedScrollPosition, 10);
+      // 현재 스크롤 위치와 다를 때만 복원
+      if (Math.abs(sidebarMain.scrollTop - scrollPos) > 1) {
+        sidebarMain.scrollTop = scrollPos;
+      }
+    }
+  }); // 의존성 배열 없음 - 모든 렌더링 후 실행
+
+  // URL 기반 자동 펼침 (스크롤 위치 유지)
   useEffect(() => {
     if (!url || !menuList || menuList.length === 0) return;
 
@@ -228,10 +316,21 @@ export default function Sidebar() {
    *       useCallback으로 묶어 불필요한 재생성을 방지
    ****************************************************************************/
   const TreeItem = useCallback(({node, depth}) => {
+    const itemRef = useRef(null);
     
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedKeys.has(node.key);
     const isSelected = node.path !== "" && url.includes(node.path);
+
+    // TreeItem이 렌더링될 때 ref를 맵에 저장
+    useEffect(() => {
+      if (itemRef.current) {
+        refTreeItemsMap.current.set(node.key, itemRef.current);
+      }
+      return () => {
+        refTreeItemsMap.current.delete(node.key);
+      };
+    }, [node.key]);
 
     // 클릭 이벤트 처리 (선택 + 펼침/접힘)
     const onClick = () => {
@@ -250,6 +349,7 @@ export default function Sidebar() {
     return (
       <>
         <li role="treeitem" 
+          ref={itemRef}
           aria-expanded={isExpanded || undefined}
           aria-selected={isSelected || undefined}>
           {hasChildren ? (
@@ -314,8 +414,24 @@ export default function Sidebar() {
              style={{display : isSideBarOpen ? "flex" : "none"}}
              ref={refSidebar} 
              tabIndex={0}>
-            <div className="sidebar-main">
+            <div className="sidebar-main" ref={refSidebarMain}>
               <div className="sidebar-header">
+                <div className="tree-controls">
+                  <button 
+                    className="tree-control-btn" 
+                    onClick={expandAll}
+                    title="전체 펼치기"
+                    aria-label="전체 펼치기">
+                    ▼ 전체 펼치기
+                  </button>
+                  <button 
+                    className="tree-control-btn" 
+                    onClick={collapseAll}
+                    title="전체 접기"
+                    aria-label="전체 접기">
+                    ▲ 전체 접기
+                  </button>
+                </div>
               </div>
                 <ul className="tree" role="tree">
                     {navTree.map((node) => (

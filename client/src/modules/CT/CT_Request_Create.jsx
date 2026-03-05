@@ -47,15 +47,24 @@ export default function CT_Request_Create() {
    * 값 수정 시 compactPages useMemo 내부 로직도 함께 수정 필요
    */
   const G_PAGEGROUPCOUNT = 5;
+
+  // 접수 현황 데이터
+  const statusOptions = [
+    {"label" : "요청", "value" : "REQUESTED"},
+    {"label" : "진행 중", "value" : "IN_PROGRESS"},
+    {"label" : "완료", "value" : "COMPLETED"},
+    {"label" : "보류", "value" : "SUSPENDED"},
+    {"label" : "취소", "value" : "CANCELLED"},
+  ];
   
 
   /**
    * --- API 통신에 사용될 state 객체 ---
    * loading, setLoading : request 요청 응답 여부
-   * ctList, setCtList : CT 의뢰 목록 데이터 (차수 조회 모달에서 사용)
+   * ctRequests, setCtRequests : CT 의뢰 목록 데이터 (차수 조회 모달에서 사용)
    */
   const [loading, setLoading] = useState(null);
-  const [ctList, setCtList] = useState([]);
+  const [ctRequests, setCtRequests] = useState([]);
 
   /* ============================== 훅 관리 ============================== */
   /**
@@ -535,6 +544,16 @@ export default function CT_Request_Create() {
 
   };
 
+  // 차수 선택 시 해당 차수의 CT 데이터로 폼에 바인딩하는 함수
+  const handleCtData = (e, ct) => {
+    setCtData(prev => ({
+      ...prev,
+      ct_request_id: ct.ct_request_id,
+      ct_no: ct.ct_no,
+      ct_test_seq: ct.ct_test_seq
+    }))
+  };
+
 
   /**
    * bindDueDate : CT 접수일자 입력 시 완료 예정일자 자동 계산하여 바인딩
@@ -546,7 +565,8 @@ export default function CT_Request_Create() {
       const dueDate = Utils.addDay(value, 6); // 접수일로부터 6일 후 날짜 계산
       setCtForm(prev => ({
         ...prev,
-        ct_due_date: dueDate
+        ct_due_date: dueDate,
+        ct_status: "ACCEPTED" // 접수일이 입력되면 진행상태를 "ACCEPTED"로 변경
       }));
     };
   }
@@ -653,11 +673,6 @@ export default function CT_Request_Create() {
 
     let targetUrl = "";
 
-    // CT 접수일이 입력되어 있으면 진행상태를 "ACCEPTED"로 변경
-    if(Utils.formatDateOrNull(ctForm.ct_receipt_date) !== null && ctForm.ct_status === "REQUESTED") {
-      ctForm.ct_status = "ACCEPTED";
-    }
-
     if(Utils.toStringOrEmpty(ctForm.ct_no) === "") {
       alert("CT 번호를 입력해주세요.");
       return;
@@ -725,7 +740,6 @@ export default function CT_Request_Create() {
 
       try {
         const response = await axios.post(targetUrl, params);
-        console.log(response);
         alert("CT 의뢰가 등록되었습니다.");
         goToPage("/ct/request/read");
       } catch(err) {
@@ -1093,8 +1107,7 @@ export default function CT_Request_Create() {
       date_to : historyForm.search_to,
       client_id : historyForm.search_client,
       sample_id : historyForm.search_sample,
-      ct_lab_no : historyForm.search_labNo,
-      report_content : historyForm.search_keyword,
+      request_content : historyForm.search_keyword,
       company_id : companyId
     };
 
@@ -1103,7 +1116,7 @@ export default function CT_Request_Create() {
     try {
       const res = await axios.get("/api/ltms/ct/requests", { params });
       const resultData = res.data.data.result;
-      setCtList(resultData);
+      setCtRequests(resultData);
     } catch (err) {
     } finally {
     }
@@ -1168,6 +1181,7 @@ export default function CT_Request_Create() {
 
   // CT 차수 조회 시 선택된 CT 데이터 state
   const [ctData, setCtData] = useState({
+    ct_request_id: "",
     ct_no: "",
     ct_test_seq: ""
   }); 
@@ -1193,7 +1207,7 @@ export default function CT_Request_Create() {
    * HOW : 총 데이터 수 / pageSize 로 총 페이지 개수를 계산
    * WHY : 실시간으로 리스트 개수가 변할 때마다 페이지 수가 자동으로 갱신됨
    */
-  const totalPages = Math.ceil(ctList.length / pageSize);
+  const totalPages = Math.ceil(ctRequests.length / pageSize);
 
 
   /**
@@ -1203,8 +1217,8 @@ export default function CT_Request_Create() {
    */
   const paginatedResult = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return ctList.slice(start, start + pageSize);
-  }, [ctList, pageSize, currentPage]);
+    return ctRequests.slice(start, start + pageSize);
+  }, [ctRequests, pageSize, currentPage]);
 
 
   /**
@@ -1299,7 +1313,8 @@ export default function CT_Request_Create() {
 
     setIsValidated(true);
 
-    setCtList([]); // 차수 조회 결과 초기화
+    setCtRequests([]);  // 차수 조회 결과 초기화
+    setCtData({});      // 선택된 CT 데이터 초기화
   };
 
 
@@ -1309,13 +1324,112 @@ export default function CT_Request_Create() {
    * WHAT : 차수 조회 후 CT 항목 선택 시 CT의뢰번호와 차수를 CT등록폼에 바인딩 
    * @param {*} e : 이벤트 호출 컴포넌트
    */
-  const initializeCtData = (e) => {
-    setCtForm((prev) => ({
-      ...prev,
-      ct_no: ctData.ct_no,
-      ct_test_seq: ctData.ct_test_seq + 1
-    }));
-    resetHistoryModal();
+  const initializeCtData = async(e) => {
+
+    try {
+
+      const params = {
+        ct_request_id: ctData.ct_request_id,
+        company_id: companyId
+      };
+
+      const testSeq = Number(ctData.ct_test_seq) + 1;
+      const response = await axios.get("/api/ltms/ct/request/detail", { params });
+      const resultData = response.data.data.result;
+
+      if(resultData.ctInfo) {
+        setCtForm(prev => ({
+          ...prev,
+          "ct_test_seq" : testSeq,                                                          // CT 차수 (기존 차수 + 1)
+          "client_id" : resultData.ctInfo.client_id,                                        // 고객사 ID
+          "client_name" : resultData.ctInfo.client_name,                                    // 고객사명
+          "sample_id" : resultData.ctInfo.sample_id,                                        // 샘플 ID
+          "sample_name" : resultData.ctInfo.sample_name,                                    // 샘플명
+          "ct_lab_no" : resultData.ctInfo.ct_lab_no,                                        // CT 랩넘버
+          "sales_manager_id" : resultData.ctInfo.sales_manager_id,                          // 영업담당자 ID
+          "sales_manager_name" : resultData.ctInfo.sales_manager_name,                      // 영업담당자명
+          "labs_manage_department_id" : resultData.ctInfo.labs_manage_department_id,        // 제형관리부서 ID
+          "labs_manage_department_name" : resultData.ctInfo.labs_manage_department_name,    // 제형관리부서명
+          "labs_manager_id" : resultData.ctInfo.labs_manager_id,                            // 제형담당자 ID
+          "labs_manager_name" : resultData.ctInfo.labs_manager_name,                        // 제형담당자명
+          "ct_type" : resultData.ctInfo.ct_type,                                            // CT 유형 (고객사/부분)
+          "material_supplier_id" : resultData.ctInfo.material_supplier_id,                  // 자재 업체 ID
+          "material_supplier_name" : resultData.ctInfo.material_supplier_name,              // 자재 업체명
+          "material_large_category_id" : resultData.ctInfo.material_large_category_id,      // 자재 유형 대분류 ID
+          "material_sub_category" : resultData.ctInfo.material_sub_category,                // 자재 유형 중분류
+          "material_description" : resultData.ctInfo.material_description,                  // 자재 재질 정보
+          "material_quantity" : resultData.ctInfo.material_quantity,                        // 자재 수량
+          "sample_quantity" : resultData.ctInfo.sample_quantity,                            // 샘플 수량
+          "desired_volume" : resultData.ctInfo.desired_volume,                              // 희망 용량
+          "desired_volume_unit_id" : resultData.ctInfo.desired_volume_unit_id,              // 희망 용량 단위 (기본값 mL) [1 : mL | 2 : g | 3 : oz | 4 : wgt | 5 : vol | 6 : lv1 | 7 : lv2]
+          "sleeve_length" : resultData.ctInfo.sleeve_length,                                // 튜브 고객사 요청 길이
+          "is_cutting" : resultData.ctInfo.is_cutting,                                      // 컷팅 여부
+          "is_include_tube" : resultData.ctInfo.is_include_tube,                            // 튜브 포함 여부
+          "is_emergency" : resultData.ctInfo.is_emergency,                                  // 긴급여부
+          "is_cpnp" : resultData.ctInfo.is_cpnp,                                            // CPNP여부
+          "is_eng" : resultData.ctInfo.is_eng,                                              // 영문여부
+          "request_content" : resultData.ctInfo.request_content,                            // 의뢰내용
+          "request_remark" : resultData.ctInfo.request_remark,                              // 의뢰 비고
+          "sample_type_id" : resultData.ctInfo.sample_type_id,                              // 샘플 층상 유형 ID (기본값 "lv1") [1 : mL | 2 : g | 3 : oz | 4 : wgt | 5 : vol | 6 : lv1 | 7 : lv2]
+          "required_bulk_volume" : resultData.ctInfo.required_bulk_volume,                  // 필요 벌크 용량
+          "required_bulk_volume_unit_id" : resultData.ctInfo.required_bulk_volume_unit_id,  // 필요 벌크 용량 (기본값 mL) [1 : mL | 2 : g | 3 : oz | 4 : wgt | 5 : vol | 6 : lv1 | 7 : lv2]
+          "request_bulk_volume" : resultData.ctInfo.request_bulk_volume,                    // 의뢰 벌크 용량
+          "request_bulk_volume_unit_id" : resultData.ctInfo.request_bulk_volume_unit_id,    // 의뢰 벌크 용량 (기본값 mL) [1 : mL | 2 : g | 3 : oz | 4 : wgt | 5 : vol | 6 : lv1 | 7 : lv2]
+          "sample_etc" : resultData.ctInfo.sample_etc,                                      // 샘플 기타 특이사항
+          "sample_remark" : resultData.ctInfo.sample_remark,                                // 샘플 비고
+          "ct_manager_id" : resultData.ctInfo.ct_manager_id,                                // CT 담당자 ID
+          "ct_manager_name" : resultData.ctInfo.ct_manager_name,                            // CT 담당자명
+          "ct_status" : resultData.ctInfo.ct_status,                                        // CT 진행상태
+          "net_capacity" : resultData.ctInfo.net_capacity,                                  // 순용량(적정표시용량)
+          "net_capacity_unit_id" : resultData.ctInfo.net_capacity_unit_id,                  // 순용량 단위 (기본값 mL) [1 : mL | 2 : g | 3 : oz | 4 : wgt | 5 : vol | 6 : lv1 | 7 : lv2]
+          "ct_manage_summary" : resultData.ctInfo.ct_manage_summary,                        // CT 관리사항 요약
+          "ct_manage_remark" : resultData.ctInfo.ct_manage_remark,                          // CT 관리사항 비고
+          "company_id" : companyId,                                                         // 회사 ID (1 : 코스메카코리아)
+          "user_id" : userId                                                                // 사용자 ID
+        }));
+      } else {
+        resetForm();
+      }
+
+      if(resultData.sampleInfo.length > 0) {
+        setCtForm((prev)  => ({
+          ...prev,
+          sample_type_id: resultData.sampleInfo.length > 1 ? "7" : "6" // 샘플 층상 유형 자동 설정 (1층 : lv1 : 6, 2층 : lv2 : 7)
+        }));
+        setSampleRows(resultData.sampleInfo);
+      } else {
+        setSampleRows([
+          {
+            "idx" : 1,                    // 행 고유 키값 (화면단에서만 사용)
+            "company_id"  : companyId,   // 회사 ID (1 : 코스메카코리아)
+            "ct_request_id" : "",         // 의뢰 ID (PK) 외래키
+            "ct_request_sample_id" : "",  // 의뢰 샘플 ID (PK)
+            "sample_lab_no" : "",         // 랩넘버
+            "bulk_volume" : 0,            // 벌크량
+            "bulk_volume_unit_id" : 1,    // 벌크량 단위 (기본값 mL) [1 : mL | 2 : g | 3 : oz | 4 : wgt | 5 : vol | 6 : lv1 | 7 : lv2]
+            "viscosity" : 0,              // 점도
+            "hardness" : 0,               // 경도
+            "specific_gravity" : 0,       // 비중
+            "ratio" : 0,                  // 배합비
+            "ratio_type_id" : 4,          // 배합비 유형 (기본값 %) [1 : mL | 2 : g | 3 : oz | 4 : wgt | 5 : vol | 6 : lv1 | 7 : lv2]
+            "significant" : {             // 제형 특이사항
+              "sample_remark_1" : "",
+              "sample_remark_2" : "",
+              "sample_remark_3" : "",
+              "sample_remark_4" : "",
+              "sample_remark_5" : "",
+              "sample_remark_6" : ""
+            },
+          }
+        ]);
+      }
+      
+    } catch (err) {
+      console.error(err);
+      alert("CT 요청 상세 정보 조회 중 오류가 발생했습니다.");
+    } finally {
+      resetHistoryModal();
+    }
   }
 
   /**
@@ -1539,7 +1653,8 @@ export default function CT_Request_Create() {
 
                 <div className="ct-create-grid-label">CT 의뢰번호</div>
                 <input className="" type="search" id="ctForm_ctCode" name="ct_no" 
-                        value={ctForm.ct_no ?? ""} 
+                        value={ctForm.ct_no ?? ""}
+                        disabled={true}
                         onChange={handleInput}/>
 
                 <div className="ct-create-grid-label">차수</div>
@@ -1547,8 +1662,16 @@ export default function CT_Request_Create() {
                   <input className="" type="text" inputMode="numeric" id="ctForm_ctTestSeq" name="ct_test_seq" 
                           value={ctForm.ct_test_seq ?? ""} 
                           onChange={handleInput} 
-                          style={{width:"80px"}}/>
-                  <button id="searchCtSeq" className="search" type="button">🔍</button>
+                          style={{width:"80px"}}
+                          disabled={mode === "update" ? true : false}
+                          title={`${mode === "update" ? "이미 등록된 의뢰는 차수 수정이 불가합니다." : ""}`}
+                          />
+                  <button id="searchCtSeq" 
+                          className="search" 
+                          type="button" 
+                          disabled={mode === "update" ? true : false}
+                          title={`${mode === "update" ? "이미 등록된 의뢰는 차수 수정이 불가합니다." : ""}`}
+                          >🔍</button>
                 </div>
 
                 <div className="ct-create-grid-label">고객사</div>
@@ -1635,7 +1758,7 @@ export default function CT_Request_Create() {
                           onChange={(e) => findData_ERP(e, "materialSupplier")} />
                   <input className="" type="hidden" id="ctForm_materialSupplierId" name="material_supplier_id" 
                           value={ctForm.material_supplier_id ?? ""} onChange={handleInput}/>
-                  <button className="search">🔍</button>
+                  {/* <button className="search">🔍</button> */}
                 </div>
 
                 <div className="ct-create-grid-label">자재재질정보</div>
@@ -1820,7 +1943,7 @@ export default function CT_Request_Create() {
                                     value={row.sample_lab_no ?? ""} 
                                     onChange={(e) => handleInputSample(e, row.idx, "sample_lab_no", e.target.value)}
                                     />
-                            <button id="searchCtSeq" className="search" type="button">🔍</button>
+                            {/* <button id="searchCtSeq" className="search" type="button">🔍</button> */}
                         </div>
                         </div>
                     </div>
@@ -1980,6 +2103,14 @@ export default function CT_Request_Create() {
                 <input className="" type="hidden" id="ctForm_ctManagerId" name="ct_manager_id" 
                         value={ctForm.ct_manager_id ?? ""} onChange={handleInput}/>
 
+                <div className="ct-create-grid-label">진행상태</div>
+                <select className="" id="ctForm_ctStatus" name="ct_status"
+                        value={ctForm.ct_status ?? ""} onChange={handleInput}>
+                  {statusOptions.map((e, idx) => (
+                    <option key={idx} value={e.value}>{e.label}</option>
+                  ))}
+                </select>
+
                 <div className="ct-create-grid-label"><label htmlFor="ctForm_isCtSuspend">보류</label></div>
                 <input className="" type="checkbox" id="ctForm_isCtSuspend" checked={ctForm.is_ct_suspend} name="is_ct_suspend" 
                         onChange={(e)=> {
@@ -2138,7 +2269,7 @@ export default function CT_Request_Create() {
                       <td>
                         <input type="search" id="searchClient" name="search_client" 
                                 value={historyForm.search_client ?? ""} onChange={(e) => handleSearchInput(e)} 
-                          placeholder="고객사명을 입력해주세요."/>
+                          placeholder="Ex.. 고객사"/>
                       </td>
                     </tr>
 
@@ -2147,16 +2278,7 @@ export default function CT_Request_Create() {
                       <td>
                         <input type="search" id="searchSample" name="search_sample" 
                                 value={historyForm.search_sample ?? ""} onChange={(e) => handleSearchInput(e)} 
-                          placeholder="샘플명을 입력해주세요."/>
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <th className="tac">랩넘버</th>
-                      <td>
-                        <input type="search" id="searchLabNo" name="search_labNo" 
-                                value={historyForm.search_labNo ?? ""} onChange={(e) => handleSearchInput(e)} 
-                          placeholder="랩넘버를 입력해주세요."/>
+                          placeholder="Ex.. 샘플명"/>
                       </td>
                     </tr>
 
@@ -2165,7 +2287,7 @@ export default function CT_Request_Create() {
                       <td>
                         <input type="search" id="searchKeyword" name="search_keyword" 
                                 value={historyForm.search_keyword ?? ""} onChange={(e) => handleSearchInput(e)} 
-                          placeholder="검색어를 입력해주세요."/>
+                          placeholder="Ex.. 랩넘버 / Ct No / 의뢰 내용"/>
                         </td>
                     </tr>
                   </tbody>
@@ -2192,12 +2314,12 @@ export default function CT_Request_Create() {
                   <tbody>
                     {paginatedResult.length > 0 ? (
                       paginatedResult.map((ct, index) => (
-                        <tr key={ct.ct_request_id}>
+                        <tr key={index}>
                           <td>
                             <input type="radio" id={`selectCt_${ct.ct_request_id}`} name="select_ct" 
                                     value={ct.ct_request_id}
                                     // checked={selectedCtId === ct.ct_request_id}
-                                    onChange={(e) => setCtData((prev) => ({...prev, ct_no: ct.ct_no, ct_test_seq: ct.ct_test_seq}))}
+                                    onChange={(e) => handleCtData(e, ct)}
                                     />
                           </td>
                           <td>

@@ -67,12 +67,12 @@ export default function CT_Request_Read() {
    * 접수 현황 데이터
    */
   const statusOptions = [
-    {"idx" : 1, "label" : "전체", "value" : ""},
-    {"idx" : 2, "label" : "요청", "value" : "REQUESTED"},
-    {"idx" : 3, "label" : "진행 중", "value" : "IN_PROGRESS"},
-    {"idx" : 4, "label" : "완료", "value" : "COMPLETED"},
-    {"idx" : 5, "label" : "보류", "value" : "SUSPENDED"},
-    {"idx" : 6, "label" : "취소", "value" : "CANCELLED"},
+    {"label" : "전체", "value" : ""},
+    {"label" : "요청", "value" : "REQUESTED"},
+    {"label" : "진행 중", "value" : "IN_PROGRESS"},
+    {"label" : "완료", "value" : "COMPLETED"},
+    {"label" : "보류", "value" : "SUSPENDED"},
+    {"label" : "취소", "value" : "CANCELLED"},
   ];
 
 
@@ -80,9 +80,9 @@ export default function CT_Request_Read() {
    * CT 유형 데이터
    */
   const ctOptions = [
-    {"idx" : 1, "label" : "전체 CT", "value" : ""},
-    {"idx" : 2, "label" : "고객사 CT", "value" : "C"},
-    {"idx" : 3, "label" : "부분 CT", "value" : "P"},
+    {"label" : "전체 CT", "value" : ""},
+    {"label" : "고객사 CT", "value" : "C"},
+    {"label" : "부분 CT", "value" : "P"},
   ];
 
 
@@ -90,10 +90,10 @@ export default function CT_Request_Read() {
    * 조회조건 데이터
    */
   const searchTypeOptions = [
-    {"idx" : 1, "label" : "CT 의뢰일자", "value" : "REQ"},
-    {"idx" : 2, "label" : "CT 접수일자", "value" : "REC"},
-    {"idx" : 3, "label" : "자재 의뢰일자", "value" : "LAB"},
-    {"idx" : 4, "label" : "완료 예정일자", "value" : "COMP"},
+    {"label" : "CT 의뢰일자", "value" : "REQ"},
+    {"label" : "CT 접수일자", "value" : "REC"},
+    {"label" : "자재 의뢰일자", "value" : "LAB"},
+    {"label" : "완료 예정일자", "value" : "COMP"},
   ];
 
 
@@ -124,6 +124,7 @@ export default function CT_Request_Read() {
       judgment_id: "",
       judgment_code: "",
       judgment_name: "판정여부",
+      judgment_name_en: "Judgment",
       is_active: "",
       sort_order: ""
     }
@@ -954,6 +955,7 @@ export default function CT_Request_Read() {
           judgment_id: "",
           judgment_code: "",
           judgment_name: "판정여부",
+          judgment_name_en: "Judgment",
           is_active: "",
           sort_order: ""
         },
@@ -1042,8 +1044,8 @@ export default function CT_Request_Read() {
                 <div className="ct-search-grid-inline">
                   <select className="" id="searchForm_searchType" name="search_type" 
                           value={searchForm.search_type ?? ""} onChange={handleInputValue} required>
-                    {searchTypeOptions.map(e => (
-                      <option key={e.idx} value={e.value}>{e.label}</option>
+                    {searchTypeOptions.map((e, idx) => (
+                      <option key={idx} value={e.value}>{e.label}</option>
                     ))}
                   </select>
                   <input type="date" className="" id="searchForm_dateFrom" name="date_from" 
@@ -1069,8 +1071,8 @@ export default function CT_Request_Read() {
                 <select className="" id="searchForm_ctStatus" name="ct_status" 
                         value={searchForm.ct_status ?? ""} 
                         onChange={handleInputValue}>
-                  {statusOptions.map(e => (
-                    <option key={e.idx} value={e.value}>{e.label}</option>
+                  {statusOptions.map((e, idx) => (
+                    <option key={idx} value={e.value}>{e.label}</option>
                   ))}
                 </select>
 
@@ -1082,8 +1084,8 @@ export default function CT_Request_Read() {
                             handleInputValue(e);
                             changeManagerType(e);
                           }}>
-                    {managerOptions.map(e => (
-                      <option key={e.idx} value={e.manager_type_id} data-extra={e.module_category}>{e.manager_type_name}</option>
+                    {managerOptions.map((e, idx) => (
+                      <option key={idx} value={e.manager_type_id} data-extra={e.module_category}>{e.manager_type_name}</option>
                     ))}
                   </select>
                   <input type="search" className="" id="searchForm_manager" name="manager" 
@@ -1114,16 +1116,16 @@ export default function CT_Request_Read() {
                 <div className="ct-search-grid-label">CT 유형</div>
                 <select className="" id="searchForm_ctType" name="ct_type" 
                         value={searchForm.ct_type ?? ""} onChange={handleInputValue}>
-                  {ctOptions.map(e => (
-                    <option key={e.idx} value={e.value}>{e.label}</option>
+                  {ctOptions.map((e, idx) => (
+                    <option key={idx} value={e.value}>{e.label}</option>
                   ))}
                 </select>
 
                 <div className="ct-search-grid-label">판정</div>
                 <select className="" id="searchForm_judgmentId" name="judgment_id" disabled={optionsLoading.judgment}
                         value={searchForm.judgment_id ?? ""} onChange={handleInputValue}>
-                  {judgmentOptions.map(e => (
-                    <option key={e.idx} value={e.judgment_id}>{e.judgment_name}</option>
+                  {judgmentOptions.map((e, idx) => (
+                    <option key={idx} value={e.judgment_id}>{e.judgment_name}</option>
                   ))}
                 </select>
 
@@ -1310,10 +1312,10 @@ export default function CT_Request_Read() {
                   </td>
                 </tr>
               ) : (
-                paginatedResult.map((item) => (
-                  <tr key={item.ct_request_id}>
+                paginatedResult.map((item, idx) => (
+                  <tr key={idx}>
                     {columns.map((col, index) => (
-                      <td key={`${item.ct_request_id}-${index}`} data-label={col.label} id={`${item.ct_request_id}-${index}`}>
+                      <td key={`${idx}-${index}`} data-label={col.label} id={`${idx}-${index}`}>
                         <Link 
                           to={`/ct/request/create?ct_request_id=${item.ct_request_id}&mode=update`}
                         >
@@ -1334,8 +1336,8 @@ export default function CT_Request_Read() {
         <div className="pagination">
           <button disabled={currentPage === 1} onClick={moveFirst}>⏮</button>
           <button disabled={currentPage === 1} onClick={movePrev}>◀</button>
-          {compactPages.map((p) => (
-            <button key={p} className={p === currentPage ? "active" : ""}
+          {compactPages.map((p, idx) => (
+            <button key={idx} className={p === currentPage ? "active" : ""}
               onClick={() => movePage(p)} >
               {p}
             </button>

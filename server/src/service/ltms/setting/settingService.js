@@ -86,6 +86,7 @@ export const getJudgmentOptions = async (params) => {
       judgment_id: opt.judgment_id,
       judgment_code: opt.judgment_code,
       judgment_name: opt.judgment_name,
+      judgment_name_en: opt.judgment_name_en,
       is_active: opt.is_active,
       sort_order: opt.sort_order,
       from_db: opt.from_db
@@ -132,6 +133,7 @@ export const getUnitOptions = async (params) => {
       unit_type: opt.unit_type,
       unit_code: opt.unit_code,
       unit_name: opt.unit_name,
+      unit_name_en: opt.unit_name_en,
       umunit_id: opt.umunit_code,
       is_active: opt.is_active,
       sort_order: opt.sort_order,

@@ -315,12 +315,21 @@ export const registerUser = async (conn, queryParams) => {
       company_id,
       employee_number,
       user_full_name,
-      role_id
+      role_id,
+      department_id
     ) VALUES (
       :company_id,
       :employee_number,
       :user_full_name,
-      4
+      4,
+      (SELECT 
+        department_id 
+      FROM 
+        department 
+      WHERE 
+        company_id = :company_id 
+        AND temp_company_seq = :temp_company_seq 
+      LIMIT 1)
     );
   `;
 
@@ -383,61 +392,128 @@ export const findUsers = async (conn, queryParams) => {
   let query = `
     /* findUsers: 사용자 목록 조회 (역할 정보 포함) */
     SELECT
-      u.user_id                                             AS user_id,
-      u.employee_number                                     AS employee_number,
-      u.user_name                                           AS user_name,
-      u.user_full_name                                      AS user_full_name,
-      u.email                                               AS email,
-      u.phone                                               AS phone,
-      u.position                                            AS position,
-      CASE WHEN u.status = 'active' THEN 1 ELSE 0 END       AS status,
-      DATE_FORMAT(u.last_login_at, '%Y-%m-%d')              AS last_login_at,
-      r.role_id                                             AS role_id,
-      r.role_code                                           AS role_code,
-      r.role_name                                           AS role_name,
-      r.description                                         AS role_description,
-      CASE 
-        WHEN d.part_code IS NULL OR d.part_code = '' 
-              OR d.part_name IS NULL OR d.part_name = ''
-        THEN d.team_name
-        ELSE CONCAT(d.team_name, ' - ', d.part_name) 
-      END                                                   AS department_name,
-      ug.user_grade_id                                      AS user_grade_id,
-      CONCAT('(', ug.grade_code, ') ', ug.grade_name)       AS grade_name,
-      ug.grade_level                                        AS grade_level,
-      'Y'                                                   AS from_db
-    FROM
-      \`user\` u
-    LEFT JOIN 
-      role r 
-      ON u.role_id = r.role_id 
-      AND u.company_id = r.company_id
-      AND r.is_active = 1
-    LEFT JOIN
-      department d
-      ON u.department_id = d.department_id
-      AND u.company_id = d.company_id
-    LEFT JOIN
-      user_grade ug 
-      ON u.user_grade_id = ug.user_grade_id
-      AND u.company_id = ug.company_id
-    WHERE
-      u.company_id = :company_id
+      *
+    FROM 
     `;
-
-    if(queryParams.is_setting != 1) {
-      query += ` AND u.is_active = 1`;
+    if(queryParams.department_id == 50) {
+      query += `
+    (
+      SELECT
+        u.user_id                                             AS user_id,
+        u.employee_number                                     AS employee_number,
+        u.user_name                                           AS user_name,
+        u.user_full_name                                      AS user_full_name,
+        u.email                                               AS email,
+        u.phone                                               AS phone,
+        u.position                                            AS position,
+        CASE WHEN u.status = 'active' THEN 1 ELSE 0 END       AS status,
+        DATE_FORMAT(u.last_login_at, '%Y-%m-%d')              AS last_login_at,
+        r.role_id                                             AS role_id,
+        r.role_code                                           AS role_code,
+        r.role_name                                           AS role_name,
+        r.description                                         AS role_description,
+        CASE 
+          WHEN d.part_code IS NULL OR d.part_code = '' 
+                OR d.part_name IS NULL OR d.part_name = ''
+          THEN d.team_name
+          ELSE CONCAT(d.team_name, ' - ', d.part_name) 
+        END                                                   AS department_name,
+        ug.user_grade_id                                      AS user_grade_id,
+        CONCAT('(', ug.grade_code, ') ', ug.grade_name)       AS grade_name,
+        ug.grade_level                                        AS grade_level,
+        'Y'                                                   AS from_db
+      FROM
+        \`user\` u
+      LEFT JOIN 
+        role r 
+        ON u.role_id = r.role_id 
+        AND u.company_id = r.company_id
+        AND r.is_active = 1
+      LEFT JOIN
+        department d
+        ON u.department_id = d.department_id
+        AND u.company_id = d.company_id
+      LEFT JOIN
+        user_grade ug 
+        ON u.user_grade_id = ug.user_grade_id
+        AND u.company_id = ug.company_id
+      WHERE
+        u.company_id = :company_id
+        AND u.department_id = 50
+    `;
+      if(queryParams.is_setting != 1) {
+        query += `
+        AND u.is_active = 1`;
+      }
+      
+      query += `
+        ORDER BY
+          IFNULL(u.user_grade_id, 999),
+          u.user_full_name
+    ) A
+    UNION ALL
+    SELECT
+      *
+    FROM
+    `;
     }
+    query += `
+    (
+      SELECT
+        u.user_id                                             AS user_id,
+        u.employee_number                                     AS employee_number,
+        u.user_name                                           AS user_name,
+        u.user_full_name                                      AS user_full_name,
+        u.email                                               AS email,
+        u.phone                                               AS phone,
+        u.position                                            AS position,
+        CASE WHEN u.status = 'active' THEN 1 ELSE 0 END       AS status,
+        DATE_FORMAT(u.last_login_at, '%Y-%m-%d')              AS last_login_at,
+        r.role_id                                             AS role_id,
+        r.role_code                                           AS role_code,
+        r.role_name                                           AS role_name,
+        r.description                                         AS role_description,
+        CASE 
+          WHEN d.part_code IS NULL OR d.part_code = '' 
+                OR d.part_name IS NULL OR d.part_name = ''
+          THEN d.team_name
+          ELSE CONCAT(d.team_name, ' - ', d.part_name) 
+        END                                                   AS department_name,
+        ug.user_grade_id                                      AS user_grade_id,
+        CONCAT('(', ug.grade_code, ') ', ug.grade_name)       AS grade_name,
+        ug.grade_level                                        AS grade_level,
+        'Y'                                                   AS from_db
+      FROM
+        \`user\` u
+      LEFT JOIN 
+        role r 
+        ON u.role_id = r.role_id 
+        AND u.company_id = r.company_id
+        AND r.is_active = 1
+      LEFT JOIN
+        department d
+        ON u.department_id = d.department_id
+        AND u.company_id = d.company_id
+      LEFT JOIN
+        user_grade ug 
+        ON u.user_grade_id = ug.user_grade_id
+        AND u.company_id = ug.company_id
+      WHERE
+        u.company_id = :company_id
+        AND u.department_id != 50
+      `;
 
-    if(queryParams.team_code != "ITS") {
-      query += ` AND (d.department_id != 4 OR d.department_id IS NULL)`; // ITS 부서 제외
-    }
+      if(queryParams.is_setting != 1) {
+        query += ` AND u.is_active = 1`;
+      }
+      
+      query += ` ORDER BY
+        IFNULL(u.user_grade_id, 999),
+        u.user_full_name
+    ) B
     
-    query += ` ORDER BY
-      IFNULL(u.user_grade_id, 999),
-      u.user_full_name;
   `;
-
+console.log(utils.debugQuery(query, queryParams));
   const result = await conn.query(query, queryParams);
   return result;
 };

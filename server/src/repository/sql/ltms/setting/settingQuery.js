@@ -57,6 +57,7 @@ export const findJudgmentOptions = async (conn, queryParams) => {
       j.judgment_id                             AS judgment_id,
       j.judgment_code                           AS judgment_code,
       j.judgment_name                           AS judgment_name,
+      j.judgment_name_en                        AS judgment_name_en,
       j.is_active                               AS is_active,
       j.sort_order                              AS sort_order,
       'Y'                                       AS from_db
@@ -92,6 +93,7 @@ export const findUnitOptions = async (conn, queryParams) => {
       u.unit_type                           AS unit_type,
       u.unit_code                           AS unit_code,
       u.unit_name                           AS unit_name,
+      u.unit_name_en                        AS unit_name_en,
       u.umunit_code                         AS umunit_code,
       u.is_active                           AS is_active,
       u.sort_order                          AS sort_order,

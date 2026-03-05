@@ -13,6 +13,10 @@ CREATE TABLE `approval_line_template` (
   `is_parallel` tinyint(1) DEFAULT 0 COMMENT '병렬 결재 여부',
   `parallel_group_id` varchar(50) DEFAULT NULL COMMENT '병렬 결재 그룹 id',
   `parallel_approval_rule` varchar(20) DEFAULT 'ALL' COMMENT '''All'' : 전원 승인 필요(기본값), ''ANY'' : 1명만 승인하면 통과, ''MAJORITY'' : 과반수 승인 (Ex. 3명 중 2명)',
+  `delegated_from_user_id` int(11) DEFAULT NULL COMMENT '위임자 pk (외래키) - 원래 결재자',
+  `delegation_start_date` datetime DEFAULT NULL COMMENT '위임 시작일',
+  `delegation_end_date` datetime DEFAULT NULL COMMENT '위임 종료일',
+  `delegation_reason` text DEFAULT NULL COMMENT '위임 사유',
   `condition_type` varchar(20) DEFAULT NULL COMMENT '조건부 결재 금액별: { "min": 0, "max": 1000000 } | 우선순위별: { "priority": "HIGH" }',
   `condition_value` varchar(100) DEFAULT NULL COMMENT '조건부 값',
   `is_active` tinyint(1) DEFAULT 1 COMMENT '활성 여부 (1: 활성, 0: 비활성)',
@@ -26,5 +30,7 @@ CREATE TABLE `approval_line_template` (
   PRIMARY KEY (`approval_line_template_id`),
   KEY `idx_template_step` (`approval_template_id`,`step`) COMMENT '템플릿별 단계 조회 인덱스',
   KEY `idx_document_type_active` (`document_type`,`is_active`) COMMENT '문서 유형 및 활성 여부 인덱스',
-  KEY `idx_company_active_sort` (`company_id`,`is_active`,`sort_order`) COMMENT '회사, 활성 여부 및 정렬 순번 인덱스'
-) ENGINE=InnoDB AUTO_INCREMENT=98 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='결재선 템플릿 테이블';
+  KEY `idx_company_active_sort` (`company_id`,`is_active`,`sort_order`) COMMENT '회사, 활성 여부 및 정렬 순번 인덱스',
+  KEY `idx_delegated_from` (`delegated_from_user_id`) COMMENT '위임자 조회',
+  KEY `idx_delegation_period` (`delegation_start_date`,`delegation_end_date`) COMMENT '위임 기간 조회'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='결재선 템플릿 테이블';

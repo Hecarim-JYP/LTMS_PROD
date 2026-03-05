@@ -6,21 +6,24 @@
  * 수정사항 : 
  */
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import axios from "axios";
 import { AuthContext } from "/src/contexts/AuthContext";
+import { Common } from "/src/components/Common";
 
 export default function UserManage() {
 
-    const { user, hasModulePermission } = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
     const companyId = user.company_id;
+
+    const G_PAGEGROUPCOUNT = Common.pageGroupCount;
 
     /**
      * 사용자 목록 데이터
      */
-    const [userList, setUserList] = useState([]);
+    const [users, setUsers] = useState([]);
     // 예시 데이터 구조
-    // userList = [
+    // users = [
     //     {
     //         user_id : 사용자 ID (PK)
     //         user_name : 사용자 이름 (이메일주소에서 도메인 제외한 부분)
@@ -44,9 +47,9 @@ export default function UserManage() {
     /**
      * 역할 목록 데이터 (셀렉트박스용)
      */
-    const [roleList, setRoleList] = useState([]);
+    const [roles, setRoles] = useState([]);
     // 예시 데이터 구조
-    // roleList = [
+    // roles = [
     //     {
     //         idx : 인덱스 
     //         role_id : 역할 ID (PK)
@@ -59,79 +62,95 @@ export default function UserManage() {
     //     },
     // ];
 
-    /**
-     * 로딩 상태
-     */
+    // 로딩 상태
     const [isLoading, setIsLoading] = useState(true);
 
-    /**
-     * 컴포넌트 마운트 시 데이터 조회
-     */
+    // 검색/필터 상태
+    const [query, setQuery] = useState("");
+    const [debouncedQuery, setDebouncedQuery] = useState("");
+
+    // 검색 디바운스
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedQuery(query), 300);
+        return () => clearTimeout(t);
+    }, [query]);
+
+    // 컴포넌트 마운트 시 데이터 조회
     useEffect(() => {
         fetchRoleList();
         fetchUserList();
     }, []);
 
-    /**
-     * 사용자 목록 조회
-     */
+    // 필터링된 사용자 목록
+    const filteredUserGroups = useMemo(() => {
+        const q = debouncedQuery.trim().toLowerCase();
+        
+        return users.filter((user) => {
+            // 검색어 필터
+            const matchQuery = !q 
+                || String(user.user_name || "").toLowerCase().includes(q)
+                || String(user.user_full_name || "").toLowerCase().includes(q)
+                || String(user.email || "").toLowerCase().includes(q)
+                || String(user.employee_number || "").toLowerCase().includes(q)
+                || String(user.department_name || "").toLowerCase().includes(q)
+                || String(user.grade_name || "").toLowerCase().includes(q);
+            
+            return matchQuery;
+        });
+    }, [users, debouncedQuery]);
+
+    // 사용자 목록 조회
     const fetchUserList = async () => {
         try {
             setIsLoading(true);
             const params = { 
                 company_id: companyId,
                 is_setting: 1, // 설정용 사용자 목록 조회 플래그
-                team_code: user.team_code // 사용자 소속 팀 코드
+                department_id: user.department_id // 사용자 소속 부서 ID
             };
             const response = await axios.get("/api/ltms/auth/users", { params });
-            const userList = response.data.data.result || [];
+            const resultUsers = response.data.data.result || [];
             
-            setUserList(userList);
-
+            setUsers(resultUsers);
+            console.log(resultUsers);
         } catch (error) {
             console.error("사용자 목록 조회 실패:", error);
             alert("사용자 목록을 불러오는 중 오류가 발생했습니다.");
-            setUserList([]);
+            setUsers([]);
         } finally {
             setIsLoading(false);
         }
     };
 
-    /**
-     * 역할 목록 조회
-     */
+    // 역할 목록 조회
     const fetchRoleList = async () => {
         try {
             const params = { company_id: companyId };
             const response = await axios.get("/api/ltms/auth/roles", { params });
             const roleList = response.data.data.result || [];
-            setRoleList(roleList);
+            setRoles(roleList);
         } catch (error) {
             console.error("역할 목록 조회 실패:", error);
-            setRoleList([]);
+            setRoles([]);
         }
     };
 
-    /**
-     * 입력 필드 변경 핸들러
-     */
+    // 입력 필드 변경 핸들러
     const handleInputChange = (userId, field, e) => {
         const value = e.target.type === 'checkbox' ? (e.target.checked ? 1 : 0) : e.target.value;
         
-        setUserList(prev => prev.map(user => 
+        setUsers(prev => prev.map(user => 
             user.user_id === userId ? { ...user, [field]: value } : user
         ));
     };
 
-    /**
-     * 저장
-     */
+    // 저장
     const save = async () => {
 
         if (!confirm("변경사항을 저장하시겠습니까?")) return;
 
         try {
-            const modifiedUsers = userList.map((user) => ({
+            const modifiedUsers = users.map((user) => ({
                     company_id: companyId,
                     user_id: user.user_id,
                     role_id: user.role_id,
@@ -155,14 +174,65 @@ export default function UserManage() {
         }
     };
 
-    /**
-     * 초기화
-     */
+    // 초기화
     const reset = () => {
         if (confirm("변경사항을 초기화하시겠습니까?")) {
             fetchUserList();
         }
     };
+
+    // 페이지네이션 관련 상태
+    const [pageSize, setPageSize] = useState(20);
+
+    // currentPage : 현재 페이지
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // 전체 페이지 수 (filteredUserGroups : 검색/정렬 적용된 최종 결과)
+    const totalPages = Math.ceil(filteredUserGroups.length / pageSize);
+
+    // paginatedResult 현재 페이지에 해당하는 데이터만 slice해서 렌더링용 배열 생성
+    const paginatedResult = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return filteredUserGroups.slice(start, start + pageSize);
+    }, [filteredUserGroups, pageSize, currentPage]);
+
+    // 페이지 번호 배열 : 현재 페이지를 기준으로 10개 단위 페이지 그룹 계산
+    const compactPages = useMemo(() => {
+        const groupStart = Math.floor((currentPage - 1) / G_PAGEGROUPCOUNT) * G_PAGEGROUPCOUNT + 1;  // 그룹 시작 페이지
+        const groupEnd = Math.min(groupStart + 9, totalPages);           // 그룹 마지막 페이지
+
+        const pages = [];
+        for (let i = groupStart; i <= groupEnd; i++) {
+        pages.push(i);
+        }
+        return pages;
+    }, [currentPage, totalPages]);
+
+
+    // movePage : 특정 페이지로 이동
+    const movePage = (p) => setCurrentPage(p);
+
+
+    // movePrev : 이전 페이지 그룹으로 이동
+    const movePrev = () => {
+        const prevPage = currentPage - G_PAGEGROUPCOUNT;
+        setCurrentPage(prevPage < 1 ? 1 : prevPage);
+    };
+
+
+    // moveNext : 다음 페이지 그룹으로 이동
+    const moveNext = () => {
+        const nextPage = currentPage + G_PAGEGROUPCOUNT;
+        setCurrentPage(nextPage > totalPages ? totalPages : nextPage);
+    };
+
+
+    // moveFirst : 맨 처음 페이지로 이동
+    const moveFirst = () => setCurrentPage(1);
+
+
+    // moveLast : 맨 마지막 페이지로 이동
+    const moveLast = () => setCurrentPage(totalPages);
 
     if (isLoading) {
         return (
@@ -186,6 +256,23 @@ export default function UserManage() {
             <div className="form-buttons jcl" style={{ margin: "15px 0px" }}>
                 <button className="btn-success" onClick={save}>저장</button>
                 <button className="btn-secondary" onClick={reset}>초기화</button>
+            </div>
+
+            {/* 필터/검색 툴바 */}
+            <div className="approval-toolbar-setting" 
+                    style={{gridTemplateColumns: "1fr"}}
+                    aria-label="필터 및 검색">
+                
+                <div className="field">
+                    <label htmlFor="searchFilter">검색 (템플릿명/문서유형/설명)</label>
+                    <input
+                        id="searchFilter"
+                        type="search"
+                        placeholder="Ex...) CT 의뢰, 기본 결재선"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                    />
+                </div>
             </div>
 
             <div className="settings-section">
@@ -216,14 +303,14 @@ export default function UserManage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {userList.length === 0 ? (
+                            {paginatedResult.length === 0 ? (
                                 <tr>
                                     <td colSpan="8" className="tac">
                                         조회된 사용자가 없습니다.
                                     </td>
                                 </tr>
                             ) : (
-                                userList.map((userData, index) => (
+                                paginatedResult.map((userData, index) => (
                                     <tr key={userData.user_id}>
                                         <td className="tac">{index + 1}</td>
                                         <td className="tac">{userData.employee_number || "-"}</td>
@@ -238,7 +325,7 @@ export default function UserManage() {
                                                 style={{ width: "100%" }}
                                                 onChange={(e) => handleInputChange(userData.user_id, 'role_id', e)}
                                             >
-                                                {roleList.map(role => (
+                                                {roles.map(role => (
                                                     <option key={role.idx} value={role.role_id}>
                                                         {role.role_name}
                                                     </option>
@@ -259,6 +346,22 @@ export default function UserManage() {
                     </table>
                 </div>
             </div>
+
+            {/* ↓ 페이징 바 ↓ */}
+            <div className="pagination">
+            <button disabled={currentPage === 1} onClick={moveFirst}>⏮</button>
+            <button disabled={currentPage === 1} onClick={movePrev}>◀</button>
+            {compactPages.map((p) => (
+                <button key={p} className={p === currentPage ? "active" : ""}
+                onClick={() => movePage(p)} >
+                {p}
+                </button>
+            ))}
+            <button disabled={currentPage === totalPages || totalPages === 0} onClick={moveNext}>▶</button>
+            <button disabled={currentPage === totalPages || totalPages === 0} onClick={moveLast}>⏭</button>
+            </div>
+            {/* ↑ 페이징 바 ↑ */}
+
         </div>
     );
 }

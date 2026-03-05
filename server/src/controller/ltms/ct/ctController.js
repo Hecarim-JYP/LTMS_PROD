@@ -449,62 +449,6 @@ router.get('/test-report/remark-historys', async (req, res) => {
 });
 
 
-/* ============================== 결재 ============================== */
-/**
- * 🔍 CT 결재 데이터 목록 조회
- */
-router.get('/approvals', async (req, res) => {
-  try {
-    const result = await ctService.getCtApprovals(req.query);
-    res.json({ 
-      success: true, 
-      data: result 
-    });
-
-  } catch (err) {
-    console.error("❌ CT 결재 데이터 조회 실패:", err.message);
-    res.status(500).json({ 
-      success: false, 
-      error: {
-        message: err.message,
-        code: err.code,
-        errno: err.errno,
-        sqlState: err.sqlState,
-        sql: err.sql
-      },
-      message: err.message,
-    });
-  }
-});
-
-
-/**
- * CT 결재 상세 보기
- */
-router.get('/approval/detail', async (req, res) => {
-  try {
-    const result = await ctService.getCtApprovalById(req.query);
-    res.json({ 
-      success: true, 
-      data: result 
-    });
-    
-  } catch (err) {
-    console.error("❌ CT 결재 데이터 조회 실패:", err.message);
-    res.status(500).json({ 
-      success: false, 
-      error: {
-        message: err.message,
-        code: err.code,
-        errno: err.errno,
-        sqlState: err.sqlState,
-        sql: err.sql
-      },
-      message: err.message,
-    });
-  }
-});
-
 /* ============================== 시험 기준 ============================== */
 /**
  * 시험 기준 결과 유형 옵션 조회
