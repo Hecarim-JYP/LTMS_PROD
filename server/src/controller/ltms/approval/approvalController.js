@@ -384,7 +384,7 @@ router.post('/request', async (req, res) => {
   try {
     const params = {
       company_id: req.body.company_id,
-      requester_id: req.body.user_id,
+      requester_id: req.body.requester_id,
       document_id: req.body.document_id,
       document_number: req.body.document_number,
       document_type: req.body.document_type

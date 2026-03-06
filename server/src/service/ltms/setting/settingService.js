@@ -36,7 +36,6 @@ export const getManagerTypeOptions = async (params) => {
     const result = await settingQuery.findManagerTypeOptions(conn, queryParams);
 
     const managerOptions = result.map(opt => ({
-      idx: parseInt(opt.idx, 10), // 10진수 정수로 변환
       module_category: opt.module_category,
       manager_type_id: opt.manager_type_id,
       manager_type_code: opt.manager_type_code,
@@ -55,6 +54,108 @@ export const getManagerTypeOptions = async (params) => {
   } finally {
     if (conn) conn.release();
   }
+};
+
+
+/**
+ * saveManagerTypeOptions : CT 담당자 유형 옵션 저장
+ * --------------------------------------------
+ * @param {*} params : 저장할 담당자 유형 옵션 데이터
+ */
+export const saveManagerTypeOptions = async (params) => {
+  // 필수 파라미터 검증
+  utils.checkRequiredParams(params, ['company_id', 'manager_types']);
+
+  const companyId = utils.toNumberOrNull(params.company_id);
+  const managerTypes = params.manager_types;
+
+  let conn;
+
+  try {
+    conn = await getPool().getConnection();
+    
+    // 트랜잭션 시작
+    await conn.beginTransaction();
+
+    // 병렬 처리를 위한 Promise 배열 생성
+    const promises = managerTypes.map(async (type) => {
+
+      const typeParams = {
+        company_id: companyId,
+        manager_type_id: type.manager_type_id,
+        module_category: type.module_category,
+        manager_type_code: type.manager_type_code,
+        manager_type_name: type.manager_type_name,
+        is_active: utils.toNumberOrNull(type.is_active),
+        sort_order: utils.toNumberOrNull(type.sort_order),
+        from_db: type.from_db
+      };
+
+      // from_db 값에 따라 UPDATE 또는 INSERT 실행
+      if (type.from_db === 'Y') {
+        // 기존 데이터: UPDATE
+        await settingQuery.updateManagerTypeOptions(conn, typeParams);
+        return {
+          type: 'updated',
+          data: {
+            manager_type_id: type.manager_type_id,
+            manager_type_code: type.manager_type_code,
+            manager_type_name: type.manager_type_name,
+            status: 'success'
+          }
+        };
+      } else if (type.from_db === 'N') {
+        // 새로운 데이터: INSERT (공백이 아닌 경우만)
+        if (type.manager_type_name && type.manager_type_code) {
+          await settingQuery.insertManagerTypeOptions(conn, typeParams);
+          return {
+            type: 'inserted',
+            data: {
+              manager_type_code: type.manager_type_code,
+              manager_type_name: type.manager_type_name,
+              status: 'success'
+            }
+          };
+        }
+        return null;
+      }
+    });
+
+    // 모든 Promise를 병렬로 실행
+    const allResults = await Promise.all(promises);
+
+    // 결과를 분류
+    const results = {
+      inserted: [],
+      updated: [],
+      errors: []
+    };
+
+    allResults.forEach(result => {
+      if (result) {
+        if (result.type === 'inserted') {
+          results.inserted.push(result.data);
+        } else if (result.type === 'updated') {
+          results.updated.push(result.data);
+        }
+      }
+    });
+
+    // 트랜잭션 커밋
+    await conn.commit();
+
+    return {
+      result: results
+    }
+
+  } catch (err) {
+    // 트랜잭션 롤백
+    if (conn) await conn.rollback();
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+
 };
 
 
@@ -82,11 +183,12 @@ export const getJudgmentOptions = async (params) => {
     const result = await settingQuery.findJudgmentOptions(conn, queryParams);
 
     const judgmentOptions = result.map(opt => ({
-      idx: parseInt(opt.idx, 10), // 10진수 정수로 변환
       judgment_id: opt.judgment_id,
       judgment_code: opt.judgment_code,
       judgment_name: opt.judgment_name,
       judgment_name_en: opt.judgment_name_en,
+      judgment_description: opt.judgment_description,
+      result_code: opt.result_code,
       is_active: opt.is_active,
       sort_order: opt.sort_order,
       from_db: opt.from_db
@@ -101,6 +203,122 @@ export const getJudgmentOptions = async (params) => {
   } finally {
     if (conn) conn.release();
   }
+};
+
+
+/**
+ * saveJudgmentOptions : 판정 옵션 저장
+ * --------------------------------------------
+ * @param {*} params : 저장할 판정 옵션 데이터
+ */
+export const saveJudgmentOptions = async (params) => {
+  // 필수 파라미터 검증
+  utils.checkRequiredParams(params, ['company_id', 'judgments']);
+
+  const companyId = utils.toNumberOrNull(params.company_id);
+  const judgments = params.judgments;
+
+  let conn;
+
+  try {
+    conn = await getPool().getConnection();
+    
+    // 트랜잭션 시작
+    await conn.beginTransaction();
+
+    // 병렬 처리를 위한 Promise 배열 생성
+    const promises = judgments.map(async (judgment) => {
+
+      const judgmentParams = {
+        company_id: companyId,
+        judgment_id: judgment.judgment_id,
+        judgment_code: judgment.judgment_code,
+        judgment_name: judgment.judgment_name,
+        judgment_name_en: judgment.judgment_name_en,
+        judgment_description: judgment.judgment_description,
+        result_code: judgment.result_code,
+        is_active: utils.toNumberOrNull(judgment.is_active),
+        sort_order: utils.toNumberOrNull(judgment.sort_order),
+        from_db: judgment.from_db
+      };
+
+      // from_db 값에 따라 UPDATE 또는 INSERT 실행
+      if (judgment.from_db === 'Y') {
+        // 기존 데이터: UPDATE
+        await settingQuery.updateJudgmentOptions(conn, judgmentParams);
+        return {
+          type: 'updated',
+          data: {
+            judgment_id: judgment.judgment_id,
+            judgment_code: judgment.judgment_code,
+            judgment_name: judgment.judgment_name,
+            judgment_name_en: judgment.judgment_name_en,
+            judgment_description: judgment.judgment_description,
+            result_code: judgment.result_code,
+            is_active: utils.toNumberOrNull(judgment.is_active),
+            sort_order: utils.toNumberOrNull(judgment.sort_order),
+            from_db: judgment.from_db,
+            status: 'success'
+          }
+        };
+      } else if (judgment.from_db === 'N') {
+        // 새로운 데이터: INSERT (공백이 아닌 경우만)
+        if (judgment.judgment_name && judgment.judgment_code) {
+          await settingQuery.insertJudgmentOptions(conn, judgmentParams);
+          return {
+            type: 'inserted',
+            data: {
+              judgment_code: judgment.judgment_code,
+              judgment_name: judgment.judgment_name,
+              judgment_name_en: judgment.judgment_name_en,
+              judgment_description: judgment.judgment_description,
+              result_code: judgment.result_code,
+              is_active: utils.toNumberOrNull(judgment.is_active),
+              sort_order: utils.toNumberOrNull(judgment.sort_order),
+              from_db: judgment.from_db,
+              status: 'success'
+            }
+          };
+        }
+        return null;
+      }
+    });
+
+    // 모든 Promise를 병렬로 실행
+    const allResults = await Promise.all(promises);
+
+    // 결과를 분류
+    const results = {
+      inserted: [],
+      updated: [],
+      errors: []
+    };
+
+    allResults.forEach(result => {
+      if (result) {
+        if (result.type === 'inserted') {
+          results.inserted.push(result.data);
+        } else if (result.type === 'updated') {
+          results.updated.push(result.data);
+        }
+      }
+    });
+
+    // 트랜잭션 커밋
+    await conn.commit();
+
+    return {
+      result: results
+    }
+
+  } catch (err) {
+    // 트랜잭션 롤백
+    if (conn) await conn.rollback();
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+
 };
 
 
@@ -134,6 +352,7 @@ export const getUnitOptions = async (params) => {
       unit_code: opt.unit_code,
       unit_name: opt.unit_name,
       unit_name_en: opt.unit_name_en,
+      unit_description: opt.unit_description,
       umunit_id: opt.umunit_code,
       is_active: opt.is_active,
       sort_order: opt.sort_order,
@@ -149,6 +368,122 @@ export const getUnitOptions = async (params) => {
   } finally {
     if (conn) conn.release();
   }
+};
+
+
+/**
+ * saveUnitOptions : 단위 옵션 저장
+ * --------------------------------------------
+ * @param {*} params : 저장할 단위 옵션 데이터
+ */
+export const saveUnitOptions = async (params) => {
+  // 필수 파라미터 검증
+  utils.checkRequiredParams(params, ['company_id', 'units']);
+
+  const companyId = utils.toNumberOrNull(params.company_id);
+  const units = params.units;
+
+  let conn;
+
+  try {
+    conn = await getPool().getConnection();
+    
+    // 트랜잭션 시작
+    await conn.beginTransaction();
+
+    // 병렬 처리를 위한 Promise 배열 생성
+    const promises = units.map(async (unit) => {
+
+      const unitParams = {
+        company_id: companyId,
+        unit_id: unit.unit_id,
+        unit_type: unit.unit_type,
+        unit_code: unit.unit_code,
+        unit_name: unit.unit_name,
+        unit_name_en: unit.unit_name_en,
+        unit_description: unit.unit_description,
+        is_active: utils.toNumberOrNull(unit.is_active),
+        sort_order: utils.toNumberOrNull(unit.sort_order),
+        from_db: unit.from_db
+      };
+
+      // from_db 값에 따라 UPDATE 또는 INSERT 실행
+      if (unit.from_db === 'Y') {
+        // 기존 데이터: UPDATE
+        await settingQuery.updateUnitOptions(conn, unitParams);
+        return {
+          type: 'updated',
+          data: {
+            unit_id: unit.unit_id,
+            unit_type: unit.unit_type,
+            unit_code: unit.unit_code,
+            unit_name: unit.unit_name,
+            unit_name_en: unit.unit_name_en,
+            unit_description: unit.unit_description,
+            is_active: utils.toNumberOrNull(unit.is_active),
+            sort_order: utils.toNumberOrNull(unit.sort_order),
+            from_db: unit.from_db,
+            status: 'success'
+          }
+        };
+      } else if (unit.from_db === 'N') {
+        // 새로운 데이터: INSERT (공백이 아닌 경우만)
+        if (unit.unit_name && unit.unit_code) {
+          await settingQuery.insertUnitOptions(conn, unitParams);
+          return {
+            type: 'inserted',
+            data: {
+              unit_type: unit.unit_type,
+              unit_code: unit.unit_code,
+              unit_name: unit.unit_name,
+              unit_name_en: unit.unit_name_en,
+              unit_description: unit.unit_description,
+              is_active: utils.toNumberOrNull(unit.is_active),
+              sort_order: utils.toNumberOrNull(unit.sort_order),
+              from_db: unit.from_db,
+              status: 'success'
+            }
+          };
+        }
+        return null;
+      }
+    });
+
+    // 모든 Promise를 병렬로 실행
+    const allResults = await Promise.all(promises);
+
+    // 결과를 분류
+    const results = {
+      inserted: [],
+      updated: [],
+      errors: []
+    };
+
+    allResults.forEach(result => {
+      if (result) {
+        if (result.type === 'inserted') {
+          results.inserted.push(result.data);
+        } else if (result.type === 'updated') {
+          results.updated.push(result.data);
+        }
+      }
+    });
+
+    // 트랜잭션 커밋
+    await conn.commit();
+
+    return {
+      result: results
+    }
+
+  } catch (err) {
+    // 트랜잭션 롤백
+    if (conn) await conn.rollback();
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+
 };
 
 

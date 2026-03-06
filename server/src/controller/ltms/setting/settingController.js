@@ -32,7 +32,7 @@ router.get('/options/unit', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('❌ CT 단위 셀렉트박스 옵션 조회 실패:', err.message);
+    console.error('❌ 단위 셀렉트박스 옵션 조회 실패:', err.message);
     res.status(500).json({ 
       success: false, 
       error: {
@@ -44,6 +44,43 @@ router.get('/options/unit', async (req, res) => {
       },
       message: err.message,
     });
+  }
+});
+
+
+/**
+ * ✏️ 단위 옵션 저장
+ * 
+ * 엔드포인트: POST /setting/options/unit/save
+ * 
+ * 동작:
+ *   1. 전달받은 단위 옵션 데이터를 DB unit 테이블에 저장
+ *   2. 기존에 있던 데이터는 UPDATE, 새로운 데이터는 INSERT 처리
+ */
+router.post('/options/unit/save', async (req, res) => {
+  try {
+    const result = await settingService.saveUnitOptions(req.body);
+    res.json({
+      success: true,
+      message: '데이터가 저장되었습니다',
+      data: result
+    });
+
+  } catch (err) {
+    console.error('❌ 단위 옵션 저장 실패:', err.message);
+    res.status(500).json({ 
+      success: false, 
+      error: {
+        message: err.message,
+        code: err.code,
+        errno: err.errno,
+        sqlState: err.sqlState,
+        sql: err.sql
+      },
+      message: err.message,
+    });
+  } finally {
+    
   }
 });
 
@@ -87,7 +124,7 @@ router.get('/options/labdepartment', async (req, res) => {
 /**
  * ✏️ 제형담당부서 옵션 저장
  * 
- * 엔드포인트: POST /setting/labdepartments/save
+ * 엔드포인트: POST /setting/options/labdepartment/save
  * 
  * 동작:
  *   1. 전달받은 제형담당부서 옵션 데이터를 DB lab_department 테이블에 저장
@@ -103,7 +140,7 @@ router.post('/options/labdepartment/save', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('❌ CT 제형담당부서 옵션 저장 실패:', err.message);
+    console.error('❌ 제형담당부서 옵션 저장 실패:', err.message);
     res.status(500).json({ 
       success: false, 
       error: {
@@ -122,18 +159,18 @@ router.post('/options/labdepartment/save', async (req, res) => {
 
 
 /**
- * 🔎 CT 매니저 타입 옵션 조회
+ * 🔎 CT 담당자 유형 옵션 조회
  * 
- * 엔드포인트: GET /setting/options/manager-type
+ * 엔드포인트: GET /setting/options/managertype
  * 
  * 동작:
- *   1. DB manager_type 테이블에서 매니저 타입 옵션 목록 조회
+ *   1. DB manager_type 테이블에서 담당자 유형 옵션 목록 조회
  * 
  * 응답 예시:
  *   { "success": true, "data": [...] }
  *   { "success": false, "error": "해당 데이터를 찾을 수 없습니다" }
  */
-router.get('/options/manager-type', async (req, res) => {
+router.get('/options/managertype', async (req, res) => {
   try {
     const options = await settingService.getManagerTypeOptions(req.query);
     res.json({
@@ -142,7 +179,7 @@ router.get('/options/manager-type', async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ CT 매니저 타입 옵션 조회 실패:", err.message);
+    console.error("❌ 담당자 유형 옵션 조회 실패:", err.message);
     res.status(500).json({ 
       success: false, 
       error: {
@@ -154,6 +191,43 @@ router.get('/options/manager-type', async (req, res) => {
       },
       message: err.message,
     });
+  }
+});
+
+
+/**
+ * ✏️ 담당자 유형 옵션 저장
+ * 
+ * 엔드포인트: POST /setting/options/managertype/save
+ * 
+ * 동작:
+ *   1. 전달받은 담당자 유형 옵션 데이터를 DB manager_type 테이블에 저장
+ *   2. 기존에 있던 데이터는 UPDATE, 새로운 데이터는 INSERT 처리
+ */
+router.post('/options/managertype/save', async (req, res) => {
+  try {
+    const result = await settingService.saveManagerTypeOptions(req.body);
+    res.json({
+      success: true,
+      message: '데이터가 저장되었습니다',
+      data: result
+    });
+
+  } catch (err) {
+    console.error('❌ 담당자 유형 옵션 저장 실패:', err.message);
+    res.status(500).json({ 
+      success: false, 
+      error: {
+        message: err.message,
+        code: err.code,
+        errno: err.errno,
+        sqlState: err.sqlState,
+        sql: err.sql
+      },
+      message: err.message,
+    });
+  } finally {
+    
   }
 });
 
@@ -179,7 +253,7 @@ router.get('/options/judgment', async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ CT 판정 결과 옵션 조회 실패:", err.message);
+    console.error("❌ 판정 결과 옵션 조회 실패:", err.message);
     res.status(500).json({ 
       success: false, 
       error: {
@@ -191,6 +265,43 @@ router.get('/options/judgment', async (req, res) => {
       },
       message: err.message,
     });
+  }
+});
+
+
+/**
+ * ✏️ 판정 옵션 저장
+ * 
+ * 엔드포인트: POST /setting/options/judgment/save
+ * 
+ * 동작:
+ *   1. 전달받은 판정 옵션 데이터를 DB judgment 테이블에 저장
+ *   2. 기존에 있던 데이터는 UPDATE, 새로운 데이터는 INSERT 처리
+ */
+router.post('/options/judgment/save', async (req, res) => {
+  try {
+    const result = await settingService.saveJudgmentOptions(req.body);
+    res.json({
+      success: true,
+      message: '데이터가 저장되었습니다',
+      data: result
+    });
+
+  } catch (err) {
+    console.error('❌ 판정 옵션 저장 실패:', err.message);
+    res.status(500).json({ 
+      success: false, 
+      error: {
+        message: err.message,
+        code: err.code,
+        errno: err.errno,
+        sqlState: err.sqlState,
+        sql: err.sql
+      },
+      message: err.message,
+    });
+  } finally {
+    
   }
 });
 
@@ -344,7 +455,7 @@ router.get('/approval/document-type', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('❌ CT 결재 문서 유형 조회 실패:', err.message);
+    console.error('❌ 결재 문서 유형 조회 실패:', err.message);
     res.status(500).json({ 
       success: false, 
       error: {
@@ -372,7 +483,7 @@ router.get('/approval/template', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('❌ CT 결재선 템플릿 목록 조회 실패:', err.message);
+    console.error('❌ 결재선 템플릿 목록 조회 실패:', err.message);
     res.status(500).json({ 
       success: false, 
       error: {
@@ -400,7 +511,7 @@ router.get('/approval/template-with-lines', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('❌ CT 결재선 템플릿 상세 조회 실패:', err.message);
+    console.error('❌ 결재선 템플릿 상세 조회 실패:', err.message);
     res.status(500).json({ 
       success: false, 
       error: {
@@ -504,7 +615,6 @@ router.post('/approval/template/set-default', async (req, res) => {
     });
   }
 });
-
 
 
 export default router;

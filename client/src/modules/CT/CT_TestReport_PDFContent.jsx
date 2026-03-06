@@ -237,7 +237,10 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
 
         {/* ↓ 상세보기 헤더 ↓ */}
         <div className="report-header">
-          <div className="report-title tal">{t.ctNo} {basicInfo?.ct_no || '-'}</div>
+          <div className="report-title">{t.ctNo} {basicInfo?.ct_no || '-'}</div>
+          <div className="report-logo">
+            <img src='/src/img/company_logo.png' alt="Logo" />
+          </div>
         </div>
         {/* ↑ 상세보기 헤더 ↑ */}
 
@@ -257,10 +260,10 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
                 </colgroup>
                 <tbody>
                   <tr id="target-tr">
-                    <th style={{ lineHeight: `${trLineHeight}` }}>{t.ctNo}</th>
-                    <td style={{ lineHeight: `${trLineHeight}` }} className="tac">{basicInfo?.ct_no || '-'}</td>
                     <th style={{ lineHeight: `${trLineHeight}` }}>{t.client}</th>
                     <td style={{ lineHeight: `${trLineHeight}` }} className="tac">{basicInfo?.client_name || '-'}</td>
+                    <th style={{ lineHeight: `${trLineHeight}` }}>{t.testRequester}</th>
+                    <td style={{ lineHeight: `${trLineHeight}` }} className="tac">{basicInfo?.sales_manager_name || '-'}</td>
                     <th style={{ lineHeight: `${trLineHeight}` }}>{t.specific}</th>
                     <td style={{ lineHeight: `${trLineHeight}` }} className="tac">{basicInfo?.specific || '-'}</td>
                   </tr>
@@ -311,10 +314,16 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
                 </colgroup>
                 <tbody>
                   <tr>
-                    <th>{t.materialSupplier}</th>
-                    <td className="tac">{requestInfo?.material_supplier_name || '-'}</td>
-                    <th rowSpan={2}>{t.materialImage}</th>
-                    <td rowSpan={2} className="material-image-td">
+                    {/* <th>{t.materialSupplier}</th>
+                    <td className="tac">{requestInfo?.material_supplier_name || '-'}</td> */}
+                    <th>{t.materialInfo}</th>
+                    <td>
+                      <div className="material-info-box" style={{border: "none", whiteSpace: "pre-wrap"}}>
+                        {requestInfo?.material_description || '-'}
+                      </div>
+                    </td>
+                    <th>{t.materialImage}</th>
+                    <td className="material-image-td">
                       {requestInfo?.images && requestInfo.images.length > 0 ? (
                         <div className="material-image-grid">
                           {requestInfo.images.map((image, index) => {
@@ -333,14 +342,6 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
                       ) : null}
                     </td>
                   </tr>
-                  <tr>
-                    <th>{t.materialInfo}</th>
-                    <td>
-                      <div className="material-info-box" style={{border: "none", whiteSpace: "pre-wrap"}}>
-                        {requestInfo?.material_description || '-'}
-                      </div>
-                    </td>
-                  </tr>
                 </tbody>
               </table>
             </div>
@@ -353,7 +354,7 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
                   <col width="15%" />
                   <col width="20%" />
                   <col width="9%" />
-                  <col width="32%" />
+                  {/* <col width="32%" /> */}
                   <col width="13%" />
                 </colgroup>
                 <thead>
@@ -362,7 +363,7 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
                     <th className="tac" style={{ lineHeight: `${trLineHeight}` }}>{t.testName}</th>
                     <th className="tac" style={{ lineHeight: `${trLineHeight}` }}>{t.testStandard}</th>
                     <th className="tac" style={{ lineHeight: `${trLineHeight}` }}>{t.testResult}</th>
-                    <th className="tac" style={{ lineHeight: `${trLineHeight}` }}>{t.testSummary}</th>
+                    {/* <th className="tac" style={{ lineHeight: `${trLineHeight}` }}>{t.testSummary}</th> */}
                     <th className="tac" style={{ lineHeight: `${trLineHeight}` }}>{t.remark}</th>
                   </tr>
                 </thead>
@@ -390,11 +391,11 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
                             {item.test_result || '-'}
                           </div>
                         </td>
-                        <td>
+                        {/* <td>
                           <div className="test-item-opinion">
                             {item.remark || '-'}
                           </div>
-                        </td>
+                        </td> */}
                         <td>
                           <div className="test-item-opinion">
                             {item.note || '-'}
@@ -402,7 +403,7 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
                         </td>
                       </tr>
                       {/* 첨부 이미지가 있는 경우 별도 행으로 표시 */}
-                      {item.attachedImage && item.attachedImage.preview && (
+                      {/* {item.attachedImage && item.attachedImage.preview && (
                         <tr>
                           <td colSpan={6} style={{ padding: '8px', textAlign: 'center' }}>
                             <div style={{ maxWidth: '400px', margin: '0 auto' }}>
@@ -419,7 +420,7 @@ export default function CT_TestReport_PDFContent({ reportData, language = 'KOR',
                             </div>
                           </td>
                         </tr>
-                      )}
+                      )} */}
                     </React.Fragment>
                   ))}
                 </tbody>

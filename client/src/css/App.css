@@ -1191,7 +1191,8 @@ pre {
     display: block;
     position: relative;
     width: 100%;
-    max-width: 634px;
+    min-width: 640px;
+    max-width: 640px;
     height: 554px;
     padding: 0 93px;
     text-align: center;
@@ -1208,7 +1209,9 @@ pre {
 }
 
 .login-box-img {
-    width: 293px; 
+    width: 500px;
+    position: relative;
+    right: 30px;
 }
 
 .login-box-input {

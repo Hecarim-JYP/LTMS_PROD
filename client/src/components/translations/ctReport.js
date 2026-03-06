@@ -18,14 +18,15 @@ export const ctTranslations = {
     downloadPDF: "PDF 다운로드",
     
     // ========== 기본 정보 ==========
-    ctNo: "CT No.",
-    client: "시험 의뢰자",
+    ctNo: "◈ Test Number :",
+    testRequester: "시험 의뢰자",
+    client: "고객사",
     specific: "비중",
     productName: "제품명",
     formulationManager: "제형 담당자",
     viscosity: "점도/경도",
     desiredVolume: "희망 용량",
-    labNo: "랩넘버",
+    labNo: "Lab No.",
     testStartDate: "시험 시작일",
     requestOrder: "의뢰 차수",
     formulationNotes: "제형 특이사항",
@@ -50,11 +51,11 @@ export const ctTranslations = {
     attachedImage: "첨부 이미지",
     attach: "첨부",
     
-    // ========== 주의사항 ==========
-    caution: "주의사항",
-    volume: "용량 섹션",
-    packaging: "포장재 섹션",
-    compatibility: "상용성 섹션",
+    // ========== 종합의견 ==========
+    caution: "종합의견",
+    volume: "용량 관련",
+    packaging: "포장재 관련",
+    compatibility: "상용성 관련",
     
     // ========== 판정 ==========
     judgmentDate: "판정일자",
@@ -66,7 +67,8 @@ export const ctTranslations = {
     // ========== 플레이스홀더 ==========
     placeholders: {
       ctNo: "CT 번호를 입력해주세요",
-      client: "의뢰자 이름 입력",
+      testRequester: "시험 의뢰자 이름 입력",
+      client: "고객사 이름 입력",
       productName: "제품명 입력",
       formulationManager: "담당자 이름 입력",
       viscosity: "점도 / 경도 입력",
@@ -99,7 +101,8 @@ export const ctTranslations = {
     downloadPDF: "PDF 다운로드",
     
     // ========== Basic Information ==========
-    ctNo: "CT No.",
+    ctNo: "◈ Test Number :",
+    testRequester: "Test Requester",
     client: "Client",
     specific: "Specific Gravity",
     productName: "Product Name",
@@ -131,11 +134,11 @@ export const ctTranslations = {
     attachedImage: "Attached Image",
     attach: "첨부",
     
-    // ========== Cautions ==========
-    caution: "Caution",
-    volume: "Volume Section",
-    packaging: "Packaging Section",
-    compatibility: "Compatibility Section",
+    // ========== Summary ==========
+    caution: "Summary",
+    volume: "Volume",
+    packaging: "Packaging",
+    compatibility: "Compatibility",
     
     // ========== Judgment ==========
     judgmentDate: "Judgment Date",
@@ -147,6 +150,7 @@ export const ctTranslations = {
     // ========== Placeholders ==========
     placeholders: {
       ctNo: "Enter CT Number",
+      testRequeter: "Enter Test Requeter Name",
       client: "Enter Client Name",
       productName: "Enter Product Name",
       formulationManager: "Enter Manager Name",

@@ -61,6 +61,8 @@ export default function ApprovalSettingCreate() {
         company_name: "",
         division_code: "",
         division_name: "",
+        department_code: "",
+        department_name: "",
         team_code: "",
         team_name: "",
         part_code: "",
@@ -218,20 +220,7 @@ export default function ApprovalSettingCreate() {
             const response = await axios.get("/api/ltms/setting/options/department", { params });
             const result = response.data.data.result || [];
 
-            // team_code 기준 중복 제거 (part_code가 null인 팀 레벨 데이터 우선 선택)
-            const uniqueDepartments = Array.from(
-                result.reduce((map, dept) => {
-                    const teamCode = dept.team_code;
-                    if (!map.has(teamCode)) {
-                        // 처음 나온 team_code면 추가
-                        map.set(teamCode, dept);
-                    } 
-                    return map;
-                }, new Map()).values()
-            );
-
-            const researchDepartments = uniqueDepartments.filter(dept => dept.team_name.includes("연구"));
-
+            const researchDepartments = result.filter(dept => dept.team_code && dept.team_code.includes("BR")); // 연구 부서만 필터링
             setDepartments(researchDepartments);
             setApprovalLines(prevLines => prevLines.map(line => ({
                 ...line,
@@ -1165,13 +1154,13 @@ export default function ApprovalSettingCreate() {
                                                             {/* 결재 부서 */}
                                                             <td className="approval-table-cell">
                                                                 <select
-                                                                    value={template.team_code || ""}
-                                                                    onChange={(e) => handleRowChange(rowIndex, "team_code", e.target.value || null)}
+                                                                    value={template.department_id || ""}
+                                                                    onChange={(e) => handleRowChange(rowIndex, "department_id", e.target.value || null)}
                                                                     className="approval-table-select"
                                                                 >
                                                                     {departments.map((dept, idx) => (
-                                                                        <option key={idx} value={dept.team_code}>
-                                                                            {dept.team_name}
+                                                                        <option key={idx} value={dept.department_id}>
+                                                                            {dept.part_name || dept.team_name}
                                                                         </option>
                                                                     ))}
                                                                 </select>

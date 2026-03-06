@@ -6,6 +6,8 @@
  * 수정사항 : 
  */
 
+import * as utils from '../../../../common/utils.js';
+
 /* ============================== 옵션 ============================== */
 /**
  * findManagerTypeOptions : CT 매니저 타입 옵션 조회
@@ -19,7 +21,6 @@ export const findManagerTypeOptions = async (conn, queryParams) => {
   const query = `
     /* findManagerTypeOptions : CT 매니저 타입 옵션 조회 */
     SELECT
-      ROW_NUMBER() OVER(ORDER BY mt.manager_type_id)  AS idx,
       mt.module_category                              AS module_category,
       mt.manager_type_id                              AS manager_type_id,
       mt.manager_type_code                            AS manager_type_code,
@@ -35,6 +36,68 @@ export const findManagerTypeOptions = async (conn, queryParams) => {
     ORDER BY
       mt.sort_order ASC;
   `;  
+
+  const result = await conn.query(query, queryParams);
+  return result;
+};
+
+
+/**
+ * updateManagerTypeOptions : CT 매니저 타입 옵션 수정
+ * --------------------------------------------
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} queryParams : 수정 파라미터
+ * @returns {Promise<Object>} : 수정 결과
+ */
+export const updateManagerTypeOptions = async (conn, queryParams) => {
+
+  const query = `
+    /* updateManagerTypeOptions : CT 매니저 타입 옵션 수정 */
+    UPDATE
+      manager_type
+    SET
+      module_category = :module_category,
+      manager_type_code = :manager_type_code,
+      manager_type_name = :manager_type_name,
+      is_active = :is_active,
+      sort_order = :sort_order
+    WHERE
+      company_id = :company_id
+      AND manager_type_id = :manager_type_id;
+  `;
+
+  const result = await conn.query(query, queryParams);
+  return result;
+};
+
+
+/**
+ * insertManagerTypeOptions : CT 매니저 타입 옵션 추가
+ * --------------------------------------------
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} queryParams : 삽입 파라미터
+ * @returns {Promise<Object>} : 삽입 결과
+ */
+export const insertManagerTypeOptions = async (conn, queryParams) => {
+
+  const query = `
+    /* insertManagerTypeOptions : CT 매니저 타입 옵션 추가 */
+    INSERT INTO manager_type (
+      company_id,
+      module_category,
+      manager_type_code,
+      manager_type_name,
+      is_active,
+      sort_order
+    ) VALUES (
+      :company_id,
+      :module_category,
+      :manager_type_code,
+      :manager_type_name,
+      :is_active,
+      :sort_order
+    );
+  `;
 
   const result = await conn.query(query, queryParams);
   return result;
@@ -58,6 +121,8 @@ export const findJudgmentOptions = async (conn, queryParams) => {
       j.judgment_code                           AS judgment_code,
       j.judgment_name                           AS judgment_name,
       j.judgment_name_en                        AS judgment_name_en,
+      j.judgment_description                   AS judgment_description,
+      j.result_code                             AS result_code,
       j.is_active                               AS is_active,
       j.sort_order                              AS sort_order,
       'Y'                                       AS from_db
@@ -70,6 +135,74 @@ export const findJudgmentOptions = async (conn, queryParams) => {
       j.sort_order ASC;
   `;
 
+
+  const result = await conn.query(query, queryParams);
+  return result;
+};
+
+
+/**
+ * updateJudgmentOptions : 판정 옵션 수정
+ * --------------------------------------------
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} queryParams : 수정 파라미터
+ * @returns {Promise<Object>} : 수정 결과
+ */
+export const updateJudgmentOptions = async (conn, queryParams) => {
+
+  const query = `
+    /* updateJudgmentOptions : CT 판정 옵션 수정 */
+    UPDATE
+      judgment
+    SET
+      judgment_code = :judgment_code,
+      judgment_name = :judgment_name,
+      judgment_name_en = :judgment_name_en,
+      judgment_description = :judgment_description,
+      result_code = :result_code,
+      is_active = :is_active,
+      sort_order = :sort_order
+    WHERE
+      company_id = :company_id
+      AND judgment_id = :judgment_id;
+  `;
+
+  const result = await conn.query(query, queryParams);
+  return result;
+};
+
+
+/**
+ * insertJudgmentOptions : CT 판정 옵션 추가
+ * --------------------------------------------
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} queryParams : 삽입 파라미터
+ * @returns {Promise<Object>} : 삽입 결과
+ */
+export const insertJudgmentOptions = async (conn, queryParams) => {
+
+  const query = `
+    /* insertJudgmentOptions : CT 판정 옵션 추가 */
+    INSERT INTO judgment (
+      company_id,
+      judgment_code,
+      judgment_name,
+      judgment_name_en,
+      judgment_description,
+      result_code,
+      is_active,
+      sort_order
+    ) VALUES (
+      :company_id,
+      :judgment_code,
+      :judgment_name,
+      :judgment_name_en,
+      :judgment_description,
+      :result_code,
+      :is_active,
+      :sort_order
+    );
+  `;
 
   const result = await conn.query(query, queryParams);
   return result;
@@ -94,6 +227,7 @@ export const findUnitOptions = async (conn, queryParams) => {
       u.unit_code                           AS unit_code,
       u.unit_name                           AS unit_name,
       u.unit_name_en                        AS unit_name_en,
+      u.unit_description                    AS unit_description,
       u.umunit_code                         AS umunit_code,
       u.is_active                           AS is_active,
       u.sort_order                          AS sort_order,
@@ -107,6 +241,74 @@ export const findUnitOptions = async (conn, queryParams) => {
       u.sort_order ASC;
   `;
 
+
+  const result = await conn.query(query, queryParams);
+  return result;
+};
+
+
+/**
+ * updateUnitOptions : 단위 옵션 수정
+ * --------------------------------------------
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} queryParams : 수정 파라미터
+ * @returns {Promise<Object>} : 수정 결과
+ */
+export const updateUnitOptions = async (conn, queryParams) => {
+
+  const query = `
+    /* updateUnitOptions : 단위 옵션 수정 */
+    UPDATE
+      unit
+    SET
+      unit_type = :unit_type,
+      unit_code = :unit_code,
+      unit_name = :unit_name,
+      unit_name_en = :unit_name_en,
+      unit_description = :unit_description,
+      is_active = :is_active,
+      sort_order = :sort_order
+    WHERE
+      company_id = :company_id
+      AND unit_id = :unit_id;
+  `;
+
+  const result = await conn.query(query, queryParams);
+  return result;
+};
+
+
+/**
+ * insertUnitOptions : 단위 옵션 추가
+ * --------------------------------------------
+ * @param {*} conn : 데이터베이스 연결 객체
+ * @param {*} queryParams : 삽입 파라미터
+ * @returns {Promise<Object>} : 삽입 결과
+ */
+export const insertUnitOptions = async (conn, queryParams) => {
+
+  const query = `
+    /* insertUnitOptions : 단위 옵션 추가 */
+    INSERT INTO unit (
+      company_id,
+      unit_type,
+      unit_code,
+      unit_name,
+      unit_name_en,
+      unit_description,
+      is_active,
+      sort_order
+    ) VALUES (
+      :company_id,
+      :unit_type,
+      :unit_code,
+      :unit_name,
+      :unit_name_en,
+      :unit_description,
+      :is_active,
+      :sort_order
+    );
+  `;
 
   const result = await conn.query(query, queryParams);
   return result;
@@ -225,6 +427,7 @@ export const findUserGrades = async (conn, queryParams) => {
       ROW_NUMBER() OVER(ORDER BY ug.sort_order)   AS idx,
       ug.user_grade_id                            AS user_grade_id,
       ug.grade_code                               AS grade_code,
+      ug.grade_type                               AS grade_type,
       ug.grade_name                               AS grade_name,
       ug.grade_level                              AS grade_level,
       ug.is_active                                AS is_active,
@@ -234,6 +437,7 @@ export const findUserGrades = async (conn, queryParams) => {
       user_grade AS ug
     WHERE
       ug.company_id = :company_id
+      AND ug.grade_type IN ('E', 'G')  /* E: 임원, G: 사무직 */
       ${queryParams.is_setting === 1 ? '' : ' AND ug.is_active = 1'}
     ORDER BY
       ug.sort_order ASC;

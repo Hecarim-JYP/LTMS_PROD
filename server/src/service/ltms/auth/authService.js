@@ -174,8 +174,8 @@ const registerUserFromERP = async (conn, queryParams, erpUserInfo) => {
   const newUserParams = {
     company_id: queryParams.company_id,
     employee_number: queryParams.user_name,
-    user_full_name: erpUserInfo.result.UserName,
-    temp_company_seq: erpUserInfo.result.DeptSeq
+    user_full_name: erpUserInfo.UserName,
+    temp_company_seq: erpUserInfo.DeptSeq
   };
 
   const isRegistered = await authQuery.checkUserExists(conn, newUserParams);
@@ -221,19 +221,20 @@ export const authenticateUser = async (params) => {
     // ========================================
     // 1단계: 사용자 정보 조회 및 검증
     // ========================================
-    const isAuthenticatedUserInfo = await erpService.authenticateUser(queryParams);
-    const storedPassword = isAuthenticatedUserInfo.result.LoginPwd; // ERP에서 조회한 인증 결과 객체 
-    let userInfo;
+    const authenticationResponse = await erpService.authenticateUser(queryParams);
+    const authenticatedUserInfo = authenticationResponse.result;
 
     // 사용자 존재 여부 검증
-    if(isAuthenticatedUserInfo === null || isAuthenticatedUserInfo === undefined) {
+    if(authenticatedUserInfo === null || authenticatedUserInfo === undefined) {
       throw new Error('사용자 정보를 ERP에서 조회할 수 없습니다. 로그인 정보를 확인하세요.');
     }
 
-    // ERP에 사용자 정보가 없으면 신규 등록 (초기 비밀번호는 ERP에서 제공된 값 사용)
-    await registerUserFromERP(conn, queryParams, isAuthenticatedUserInfo);
+    const storedPassword = authenticatedUserInfo.LoginPwd; // ERP에서 제공된 비밀번호 (SHA-512 해시된 값)
 
-    userInfo = await authQuery.findUserInfoByUsername(conn, queryParams);
+    // ERP에 사용자 정보가 없으면 신규 등록 (초기 비밀번호는 ERP에서 제공된 값 사용)
+    await registerUserFromERP(conn, queryParams, authenticatedUserInfo);
+
+    const userInfo = await authQuery.findUserInfoByUsername(conn, queryParams);
 
     const userQueryParams = {
       user_id: utils.toStringOrEmpty(userInfo.user_id),

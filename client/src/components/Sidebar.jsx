@@ -420,16 +420,16 @@ export default function Sidebar() {
                   <button 
                     className="tree-control-btn" 
                     onClick={expandAll}
-                    title="전체 펼치기"
-                    aria-label="전체 펼치기">
-                    ▼ 전체 펼치기
+                    title="메뉴 펼치기"
+                    aria-label="메뉴 펼치기">
+                    ▼ 메뉴 펼치기
                   </button>
                   <button 
                     className="tree-control-btn" 
                     onClick={collapseAll}
-                    title="전체 접기"
-                    aria-label="전체 접기">
-                    ▲ 전체 접기
+                    title="메뉴 접기"
+                    aria-label="메뉴 접기">
+                    ▲ 메뉴 접기
                   </button>
                 </div>
               </div>
