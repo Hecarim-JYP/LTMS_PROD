@@ -1,16 +1,16 @@
 /**
- * 파일명 : Judgment.jsx
- * 용도 : 판정 관리 화면
- * 최초등록 : 2025-12-24 [박진영]
- * 수정일자 : 
+ * 파일명 : ManagerType.jsx
+ * 용도 : 담당자 유형 설정 화면
+ * 최초등록 : 2026-03-06 [박진영]
  * 수정사항 : 
  */
+
 import { useState, useEffect, useRef, useContext } from "react";
 import axios from "axios";
 
 import { AuthContext } from "/src/contexts/AuthContext";
 
-export default function Judgment() {
+export default function ManagerType() {
 
     /**
      * 사용자 정보 컨텍스트
@@ -19,13 +19,13 @@ export default function Judgment() {
     const companyId = user.company_id; // 회사 ID
 
     /**
-     * judgments: 판정 목록 데이터
+     * managerTypes: 담당자 유형 목록 데이터
      * ----------------------------------------------------
      * WHY: 테이블에 표시할 각 행의 정보를 관리하기 위해 사용
      * HOW: 각 row는 id(고유값), name(항목명), useYn(사용여부), 
      *      isChecked(선택상태), sortOrder(정렬순서)를 포함
      */
-    const [judgments, setJudgments] = useState([]);
+    const [managerTypes, setManagerTypes] = useState([]);
 
 
     /**
@@ -84,30 +84,30 @@ export default function Judgment() {
 
 
     /**
-     * getJudgments : 판정 정보 조회 함수
+     * getManagerTypes : 담당자 유형 정보 조회 함수
      * ---------------------------------------------------------
-     * WHAT : 판정 정보를 조회하여 judgments 상태 변수에 저장
+     * WHAT : 담당자 유형 정보를 조회하여 managerTypes 상태 변수에 저장
      */
-    const getJudgments = async () => {
+    const getManagerTypes = async () => {
         try {
             const params = { 
                 company_id: companyId,
                 is_setting: 1 // 설정 화면용 데이터 조회 플래그
              };
-            const response = await axios.get("/api/ltms/setting/options/judgment", { params });
-            const judgmentOptions = response.data.data.result || [];
+            const response = await axios.get("/api/ltms/setting/options/managertype", { params });
+            const managerTypeOptions = response.data.data.result || [];
 
             // DB 데이터를 화면용 형식으로 변환 (isChecked 필드 추가)
-            const mappedData = judgmentOptions.map(type => ({
+            const mappedData = managerTypeOptions.map(type => ({
                 ...type,
                 isChecked: false // 화면에서 사용할 체크박스 상태
             }));
             
-            setJudgments(mappedData);
+            setManagerTypes(mappedData);
         } catch (err) {
-            const errMsg = err.response?.data?.message || "판정 정보를 불러오는 중 오류가 발생했습니다.";
+            const errMsg = err.response?.data?.message || "담당자 유형 정보를 불러오는 중 오류가 발생했습니다.";
             console.error(err);
-            alert(`판정 정보 조회에 실패했습니다.\n${errMsg}`);
+            alert(`담당자 유형 정보 조회에 실패했습니다.\n${errMsg}`);
         }
     };
 
@@ -115,25 +115,25 @@ export default function Judgment() {
     /**
      * 컴포넌트 마운트 시 초기 정렬 상태 저장
      * WHY: 정렬 변경 실패 시 원래 상태로 복구하기 위한 기준점 설정
-     * HOW: 컴포넌트가 처음 렌더링될 때 judgments의 id 배열을 저장
+     * HOW: 컴포넌트가 처음 렌더링될 때 managerTypes의 id 배열을 저장
      * 주의: 빈 의존성 배열([])로 인해 최초 1회만 실행됨
      */
     useEffect(() => {
-        initialOrderRef.current = judgments.map(r => r.idx);
-    }, [judgments]);
+        initialOrderRef.current = managerTypes.map(r => r.idx);
+    }, [managerTypes]);
 
 
     /**
-     * useEffect - 판정 정보 조회 기능
+     * useEffect - 담당자 유형 정보 조회 기능
      * ---------------------------------------------------------
      * HOW :
-     *  1. 컴포넌트 마운트 시 getJudgments() 비동기 함수를 호출한다.
-     *  2. getJudgments() 함수 내에서 axios.get() 메서드를 사용하여
-     *     "/api/ltms/setting/options/judgment" 엔드포인트에 GET 요청을 보낸다.
-     *  3. 서버로부터 응답이 오면 response.data 객체에서 판정 정보를 추출한다.
+     *  1. 컴포넌트 마운트 시 getManagerTypes() 비동기 함수를 호출한다.
+     *  2. getManagerTypes() 함수 내에서 axios.get() 메서드를 사용하여
+     *     "/api/ltms/setting/options/managertype" 엔드포인트에 GET 요청을 보낸다.
+     *  3. 서버로부터 응답이 오면 response.data 객체에서 담당자 유형 정보를 추출한다.
      */
     useEffect(() => {
-        getJudgments();
+        getManagerTypes();
     }, []);
 
 
@@ -190,7 +190,7 @@ export default function Judgment() {
 
         // 새로운 정렬을 기준점으로 저장 - 다음 정렬 변경 시 롤백 기준이 됨
         initialOrderRef.current = newRows.map(r => r.idx);
-        setJudgments(payload); // state 업데이트하여 UI 반영
+        setManagerTypes(payload); // state 업데이트하여 UI 반영
 
     };
     
@@ -209,8 +209,8 @@ export default function Judgment() {
         if (confirm("저장하시겠습니까?")) {
 
             try {
-                const params = { company_id: companyId, judgments: judgments };
-                const res = await axios.post("/api/ltms/setting/options/judgment/save", params);
+                const params = { company_id: companyId, manager_types: managerTypes };
+                const res = await axios.post("/api/ltms/setting/options/managertype/save", params);
                 if(res.status === 200) alert("저장이 완료되었습니다.");
             } catch(err) {
                 console.error(err);
@@ -236,17 +236,14 @@ export default function Judgment() {
     const addRow = () => {
 
         // 새로운 idx 생성: 기존 최대 idx + 1(고유한 idx를 보장하여 key prop 충돌 방지)
-        const newIdx = judgments.length ? Math.max(...judgments.map((_, idx) => (idx+1))) + 1 : 1;
+        const newIdx = managerTypes.length ? Math.max(...managerTypes.map((_, idx) => (idx+1))) + 1 : 1;
 
         // 배열 끝에 새 행 추가 (함수형 업데이트를 사용하여 최신 state 기반으로 업데이트)
-        setJudgments(prev => [...prev, { 
-            judgment_id: null,
+        setManagerTypes(prev => [...prev, { 
+            manager_type_id: null,
             module_category: "",
-            judgment_code: "",
-            judgment_name: "",
-            judgment_name_en: "",
-            judgment_description: "",
-            result_code: "",
+            manager_type_code: "",
+            manager_type_name: "",
             is_active: 1,
             sort_order: newIdx,
             isChecked: false,
@@ -268,7 +265,7 @@ export default function Judgment() {
     const deleteRow = () => {
         // isChecked가 false인 행들만 남김
         if(confirm("선택된 항목들을 삭제하시겠습니까?")){
-            setJudgments(prev => prev.filter(r => !r.isChecked));
+            setSampleManageDepartment(prev => prev.filter(r => !r.isChecked));
         }
     };
 
@@ -280,7 +277,7 @@ export default function Judgment() {
      * HOW: DB에서 데이터를 다시 조회하여 state를 초기화
      */
     const reset = async () => {
-        getJudgments();
+        getManagerTypes();
     };
 
 
@@ -336,7 +333,7 @@ export default function Judgment() {
         if (dragIndex === null || dragIndex === index) return;
 
         // 배열 불변성 유지를 위해 복사
-        const newRows = [...judgments];
+        const newRows = [...managerTypes];
         
         // 1. 드래그한 행을 배열에서 제거하고 해당 요소 반환
         const [moved] = newRows.splice(dragIndex, 1);
@@ -345,7 +342,7 @@ export default function Judgment() {
         newRows.splice(index, 0, moved);
 
         // 3. UI에 즉시 반영
-        setJudgments(newRows);
+        setManagerTypes(newRows);
         
         // 4. 드래그 관련 state 초기화
         setDragIndex(null);
@@ -373,7 +370,7 @@ export default function Judgment() {
             ? (e.target.checked ? 1 : 0)      // checkbox면 1/0
             : (e.target.value || null);       // text면 value (빈 문자열은 null)
         
-        setJudgments(prev => prev.map((row, rowIndex) => 
+        setManagerTypes(prev => prev.map((row, rowIndex) => 
             rowIndex === idx ? { ...row, [fieldName]: value } : row
         ));
     };
@@ -389,7 +386,7 @@ export default function Judgment() {
      * @param {number} idx - 변경할 행의 고유 ID
      */
     const handleToggleCheck = (idx) => {
-        setJudgments(prev => prev.map((row, rowIndex) => 
+        setManagerTypes(prev => prev.map((row, rowIndex) => 
             rowIndex === idx ? { ...row, isChecked: !row.isChecked } : row
         ));
     };
@@ -410,7 +407,7 @@ export default function Judgment() {
         const checked = e.target.checked; // 전체 선택 체크박스 상태
         
         // 모든 행의 isChecked를 동일하게 설정 => 전체 선택 시 모든 행이 선택되고, 해제 시 모든 행이 해제됨
-        setJudgments(prev => prev.map((row, rowIndex) => ({ ...row, isChecked: checked })));
+        setManagerTypes(prev => prev.map((row, rowIndex) => ({ ...row, isChecked: checked })));
     };
 
 
@@ -421,7 +418,7 @@ export default function Judgment() {
             <div className="setting-box">
 
                 <div className="page-top">
-                    <h1 className="user-custom-option-title">판정 설정</h1>
+                    <h1 className="user-custom-option-title">담당자유형 설정</h1>
                 </div>
 
                 <div className="form-buttons jcl" style={{ margin: "15px 0px" }}>
@@ -436,28 +433,24 @@ export default function Judgment() {
                         <table className="list-table">
                             <colgroup>
                                 {/* <col style={{ width: "2%" }} /> */}
-                                <col style={{ width: "8%" }} />    {/* 번호 */}
-                                <col style={{ width: "15%" }} />   {/* 판정코드 */}
-                                <col style={{ width: "20%" }} />   {/* 판정명 */}
-                                <col style={{ width: "20%" }} />   {/* 판정명(영문) */}
-                                <col style={{ width: "15%" }} />   {/* 판정설명 */}
-                                <col style={{ width: "12%" }} />   {/* 결과코드 */}
-                                <col style={{ width: "10%" }} />   {/* 사용여부 */}
+                                <col style={{ width: "8%" }} />      {/* 번호 */}
+                                <col style={{ width: "15%" }} />     {/* 분류 */}
+                                <col style={{ width: "20%" }} />     {/* 유형코드 */}
+                                <col style={{ width: "15%" }} />     {/* 유형 */}
+                                <col style={{ width: "12%" }} />     {/* 사용여부 */}
                             </colgroup>
                             <thead>
                                 <tr>
                                     {/* <th><input type="checkbox" onChange={toggleAll} /></th> */}
                                     <th title="드래그하여 정렬 번경을 할 수 있습니다.">번호</th>
-                                    <th>판정코드</th>
-                                    <th>판정명</th>
-                                    <th>판정명(영문)</th>
-                                    <th>판정설명</th>
-                                    <th>결과코드</th>
+                                    <th>분류</th>
+                                    <th>유형코드</th>
+                                    <th>유형</th>
                                     <th>사용여부</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {judgments.map((row, index) => (
+                                {managerTypes.map((row, index) => (
                                     <tr key={index} style={{background: hoverIndex === index ? "#e6f2ff" : "transparent"}}
                                         onDragOver={(e) => onDragOver(e, index)}
                                         onDrop={() => onDrop(index)}>
@@ -471,28 +464,18 @@ export default function Judgment() {
                                         </td>
 
                                         <td className="tac">
-                                            <input type="text" value={row.judgment_code || ""} style={{ width: "100%" }}
-                                                    onChange={(e) => handleInputChange(index, 'judgment_code', e)}/>
+                                            <input type="text" value={row.module_category || ""} style={{ width: "100%" }}
+                                                    onChange={(e) => handleInputChange(index, 'module_category', e)}/>
                                         </td>
 
                                         <td className="tac">
-                                            <input type="text" value={row.judgment_name || ""} style={{ width: "100%" }}
-                                                    onChange={(e) => handleInputChange(index, 'judgment_name', e)}/>
+                                            <input type="text" value={row.manager_type_code || ""} style={{ width: "100%" }}
+                                                    onChange={(e) => handleInputChange(index, 'manager_type_code', e)}/>
                                         </td>
 
                                         <td className="tac">
-                                            <input type="text" value={row.judgment_name_en || ""} style={{ width: "100%" }}
-                                                    onChange={(e) => handleInputChange(index, 'judgment_name_en', e)}/>
-                                        </td>
-
-                                        <td className="tac">
-                                            <input type="text" value={row.judgment_description || ""} style={{ width: "100%" }}
-                                                    onChange={(e) => handleInputChange(index, 'judgment_description', e)}/>
-                                        </td>
-
-                                        <td className="tac">
-                                            <input type="text" value={row.result_code || ""} style={{ width: "100%" }}
-                                                    onChange={(e) => handleInputChange(index, 'result_code', e)}/>
+                                            <input type="text" value={row.manager_type_name || ""} style={{ width: "100%" }}
+                                                    onChange={(e) => handleInputChange(index, 'manager_type_name', e)}/>
                                         </td>
 
                                         <td className="tac">

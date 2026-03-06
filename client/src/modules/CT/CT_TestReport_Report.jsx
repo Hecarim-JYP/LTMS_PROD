@@ -2910,32 +2910,32 @@ export default function CT_TestReport_Report() {
                   </colgroup>
                   <tbody>
                     <tr>
-                      <th>{t.ctNo}</th>
-                      <td>
-                        <input 
-                          type="text" 
-                          value={reportData.basicInfo.ct_no || ""}
-                          onChange={(e) => handleBasicInfoChange('ct_no', e.target.value)}
-                          placeholder={t.placeholders.ctNo}
-                          readOnly
-                        />
-                      </td>
                       <th>{t.client}</th>
                       <td>
                         <input 
-                          type="search" 
-                          placeholder={t.placeholders.client}
+                          type="text" 
                           value={reportData.basicInfo.client_name || ""}
+                          onChange={(e) => handleBasicInfoChange('client_name', e.target.value)}
+                          placeholder={t.placeholders.client}
+                          readOnly
+                        />
+                      </td>
+                      <th>{t.testRequester}</th>
+                      <td>
+                        <input 
+                          type="search" 
+                          placeholder={t.placeholders.testRequester}
+                          value={reportData.basicInfo.sales_manager_name || ""}
                           onChange={(e) => {
-                            handleBasicInfoChange('client_name', e.target.value);
-                            findData_ERP(e, 'client');
+                            handleBasicInfoChange('sales_manager_name', e.target.value);
+                            findData_ERP(e, 'sales_manager_id');
                           }}
                           readOnly
                         />
                         <input 
                           type="hidden" 
-                          value={reportData.basicInfo.client_id || ""}
-                          onChange={(e) => handleBasicInfoChange('client_id', e.target.value)}
+                          value={reportData.basicInfo.sales_manager_id || ""}
+                          onChange={(e) => handleBasicInfoChange('sales_manager_id', e.target.value)}
                         />
                       </td>
                       <th>{t.specific}</th>
@@ -3106,7 +3106,7 @@ export default function CT_TestReport_Report() {
                   <tbody>
                     {/* 첫 번째 행 */}
                     <tr>
-                      <th>{t.materialSupplier}</th>
+                      {/* <th>{t.materialSupplier}</th>
                       <td>
                         <input 
                           type="search" 
@@ -3123,9 +3123,20 @@ export default function CT_TestReport_Report() {
                           value={reportData.requestInfo.material_supplier_id || ""}
                           onChange={(e) => handleRequestInfoChange('material_supplier_id', e.target.value)}
                         />
+                      </td> */}
+                      <th>{t.materialInfo}</th>
+                      <td style={{ verticalAlign: "top", minHeight: `${textareaMaxHeight}px` }}>
+                        <textarea 
+                          ref={materialDescriptionRef}
+                          name="material_description"
+                          value={reportData.requestInfo.material_description || ""}
+                          onChange={(e) => handleRequestInfoChange('material_description', e.target.value)}
+                          style={{ height: "70px", minHeight: "70px"}}
+                          readOnly
+                        />
                       </td>
-                      <th rowSpan={2}>{t.materialImage}</th>
-                      <td rowSpan={2} className="material-image-td" style={{ verticalAlign: "top", padding: "8px" }}>
+                      <th>{t.materialImage}</th>
+                      <td className="material-image-td" style={{ verticalAlign: "top", padding: "8px" }}>
                         <div>
                           <input 
                             type="file" 
@@ -3178,22 +3189,6 @@ export default function CT_TestReport_Report() {
                           )}
                         </div>
                       </td>
-                    </tr>
-                    
-                    {/* 두 번째 행 */}
-                    <tr>
-                      <th>{t.materialInfo}</th>
-                      <td style={{ verticalAlign: "top", minHeight: `${textareaMaxHeight}px` }}>
-                        <textarea 
-                          ref={materialDescriptionRef}
-                          name="material_description"
-                          value={reportData.requestInfo.material_description || ""}
-                          onChange={(e) => handleRequestInfoChange('material_description', e.target.value)}
-                          style={{ height: "70px", minHeight: "70px"}}
-                          readOnly
-                        />
-                      </td>
-                      {/* rowSpan으로 인해 여기는 3, 4번째 셀이 없음 */}
                     </tr>
                   </tbody>
                 </table>

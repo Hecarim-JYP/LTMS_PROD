@@ -99,6 +99,18 @@
 }
 
 /* ============================== 인쇄용 내용 스타일 ============================== */
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.report-logo img {
+    width: 250px;
+    position: relative;
+    left: 30px;
+}
+
 .pdf-content-wrapper * {
   margin: 0;
   padding: 0;
@@ -150,6 +162,7 @@
   padding: 2px;
   word-break: break-word;
   vertical-align: middle !important;
+  font-size: 10px !important;
 }
 
 /* 주의사항 섹션 테이블의 th 가운데 정렬 강제 */
@@ -276,6 +289,10 @@
 /* 본문 영역 */
 .pdf-content-wrapper .printable-area {
   padding: 5mm;
+}
+
+.pdf-content-wrapper .printable-area .report-header {
+  margin: -20px 0px;
 }
 
 /* 페이지 나눔 제어 */

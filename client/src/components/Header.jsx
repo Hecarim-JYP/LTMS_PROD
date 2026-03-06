@@ -39,7 +39,7 @@ export default function Header() {
     <header className="header">
       <div className="logo">
         <Link to={"/main"} title="메인화면으로 이동">
-          <img src="/src/img/company_logo.png" className="header-logo" alt="메인로고" />
+          <img src="/src/img/ltms_logo.png" className="header-logo" alt="메인로고" />
         </Link>
       </div>
       {/* <input className="search" type="search" placeholder="메뉴를 입력해주세요..." /> */}

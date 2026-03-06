@@ -197,7 +197,7 @@ export default function Login() {
             <div className="login-wrapper">
                 <div className="login-box">
                     <h1 className="login-box-title">
-                        <img src="/src/img/logo.png" className="login-box-img" alt="회사 로고 이미지"/><br/>
+                        <img src="/src/img/ltms_logo.png" className="login-box-img" alt="회사 로고 이미지"/><br/>
                         <span className="login-box-subtitle">Laboratory Test Management System</span>
                     </h1>
 
